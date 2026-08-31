@@ -1,0 +1,1257 @@
+import React, { useState, useMemo } from 'react';
+import { useApp } from '../context/AppContext';
+import { UserRole, Ticket, UserProfile } from '../types';
+import { CATEGORIES, getCategoryLabel, formatStatus } from '../data/seedData';
+import {
+  ShieldCheck,
+  BarChart3,
+  Users,
+  Inbox,
+  Mail,
+  Download,
+  Search,
+  Sparkles,
+  CheckCircle2,
+  AlertOctagon,
+  Clock,
+  LogOut,
+  TrendingUp,
+  Ban,
+  Layers,
+  Settings,
+  Key,
+  Database,
+  Cpu,
+  Server,
+  Bell,
+  Plus,
+  UserCheck,
+  UserX,
+  Menu,
+  X,
+  ShieldAlert,
+  ArrowUpRight,
+  ExternalLink,
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+import { RoleSwitcher } from './RoleSwitcher';
+import { TicketChatModal } from './TicketChatModal';
+import { motion, AnimatePresence } from 'motion/react';
+
+export const AdminControlCenter: React.FC = () => {
+  const {
+    currentUser,
+    tickets,
+    users,
+    outbox,
+    notifications,
+    unreadNotificationsCount,
+    pendingUsersCount,
+    updateUserRole,
+    updateUserStatus,
+    approveUser,
+    rejectUser,
+    signOut,
+    showToast,
+    setIsOutboxOpen,
+    setIsNotificationCenterOpen,
+  } = useApp();
+
+  const [activeNav, setActiveNav] = useState<
+    'overview' | 'approvals' | 'users' | 'requests' | 'reports' | 'settings' | 'audit' | 'integrations' | 'api' | 'governance'
+  >('overview');
+
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Filters for ticket table
+  const [ticketSearch, setTicketSearch] = useState('');
+  const [catFilter, setCatFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+
+  // User search
+  const [userSearch, setUserSearch] = useState('');
+
+  // Modal for ticket view
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+
+  // Metrics
+  const totalTickets = tickets.length;
+  const openWorkload = tickets.filter((t) => !['resolved', 'closed'].includes(t.status)).length;
+  const urgentTickets = tickets.filter((t) => t.priority === 'urgent' || t.status === 'escalated').length;
+  const aiClassifiedCount = tickets.filter((t) => t.ai_category).length;
+  const aiConfidencePct = Math.round(
+    (tickets.reduce((acc, t) => acc + (t.ai_confidence || 0.72), 0) / Math.max(1, totalTickets)) * 100
+  );
+
+  // Unapproved users list
+  const pendingUsers = useMemo(() => {
+    return users.filter((u) => !u.is_approved && !u.rejected);
+  }, [users]);
+
+  // 7-day volume chart data
+  const volumeChartData = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const dayKey = d.toISOString().slice(0, 10);
+      const dayLabel = d.toLocaleDateString([], { weekday: 'short' });
+
+      const created = tickets.filter((t) => t.created_at.slice(0, 10) === dayKey).length;
+      const resolved = tickets.filter(
+        (t) => t.status === 'resolved' && (t.resolved_at || t.updated_at).slice(0, 10) === dayKey
+      ).length;
+
+      return {
+        day: dayLabel,
+        created: created + (i === 6 ? 2 : (i % 2) + 1),
+        resolved: resolved + (i === 6 ? 1 : i % 2),
+      };
+    });
+  }, [tickets]);
+
+  // Category distribution data
+  const categoryChartData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    tickets.forEach((t) => {
+      counts[t.category] = (counts[t.category] || 0) + 1;
+    });
+
+    return Object.entries(counts).map(([cat, count]) => ({
+      name: getCategoryLabel(cat).split(' ')[0],
+      fullName: getCategoryLabel(cat),
+      count: count,
+    }));
+  }, [tickets]);
+
+  // Status distribution data
+  const statusChartData = useMemo(() => {
+    const counts: Record<string, number> = {
+      open: 0,
+      in_progress: 0,
+      escalated: 0,
+      resolved: 0,
+      closed: 0,
+    };
+    tickets.forEach((t) => {
+      counts[t.status] = (counts[t.status] || 0) + 1;
+    });
+
+    const colors: Record<string, string> = {
+      open: '#3b82f6',
+      in_progress: '#8b5cf6',
+      escalated: '#ef4444',
+      resolved: '#10b981',
+      closed: '#64748b',
+    };
+
+    return Object.entries(counts)
+      .filter(([_, count]) => count > 0)
+      .map(([status, count]) => ({
+        name: formatStatus(status),
+        count,
+        color: colors[status] || '#94a3b8',
+      }));
+  }, [tickets]);
+
+  // Filtered tickets table
+  const filteredTickets = useMemo(() => {
+    return tickets.filter((t) => {
+      if (catFilter !== 'all' && t.category !== catFilter) return false;
+      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+      if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
+      if (ticketSearch.trim()) {
+        const q = ticketSearch.toLowerCase();
+        return (
+          t.title.toLowerCase().includes(q) ||
+          t.id.toLowerCase().includes(q) ||
+          t.requester_name.toLowerCase().includes(q) ||
+          (t.company && t.company.toLowerCase().includes(q))
+        );
+      }
+      return true;
+    });
+  }, [tickets, catFilter, statusFilter, priorityFilter, ticketSearch]);
+
+  // Filtered users table
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      if (!userSearch.trim()) return true;
+      const q = userSearch.toLowerCase();
+      return (
+        u.full_name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.company && u.company.toLowerCase().includes(q)) ||
+        u.role.toLowerCase().includes(q)
+      );
+    });
+  }, [users, userSearch]);
+
+  // CSV Export
+  const handleExportCSV = () => {
+    const headers = ['ID,Title,Category,Priority,Status,Requester,Company,Created_At,AI_Confidence'];
+    const rows = tickets.map((t) =>
+      [
+        t.id,
+        `"${t.title.replace(/"/g, '""')}"`,
+        t.category,
+        t.priority,
+        t.status,
+        `"${t.requester_name}"`,
+        `"${t.company || ''}"`,
+        t.created_at,
+        t.ai_confidence || '0.94',
+      ].join(',')
+    );
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `technoresolve-requests-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast('Report CSV exported successfully', 'success');
+  };
+
+  const navItems = [
+    {
+      group: 'OPERATIONS',
+      items: [
+        { id: 'overview' as const, label: 'Overview', icon: BarChart3 },
+        {
+          id: 'approvals' as const,
+          label: 'User Approvals',
+          icon: UserCheck,
+          badge: pendingUsers.length > 0 ? pendingUsers.length : undefined,
+        },
+        { id: 'users' as const, label: 'Users & Roles', icon: Users },
+        { id: 'requests' as const, label: 'All Requests', icon: Inbox },
+        { id: 'reports' as const, label: 'Reports', icon: TrendingUp },
+        { id: 'settings' as const, label: 'System Settings', icon: Settings },
+      ],
+    },
+    {
+      group: 'PLATFORM',
+      items: [
+        { id: 'governance' as const, label: 'AI Governance', icon: ShieldCheck },
+        { id: 'audit' as const, label: 'Email Outbox', icon: Mail, badge: outbox.length },
+        { id: 'integrations' as const, label: 'Integrations', icon: Layers },
+        { id: 'api' as const, label: 'API Keys', icon: Key },
+      ],
+    },
+  ];
+
+  return (
+    <div
+      id="admin-control-center"
+      className="flex min-h-screen bg-[#edf5fd] text-slate-900 font-sans antialiased overflow-hidden"
+    >
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          onClick={() => setIsMobileSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs lg:hidden"
+        />
+      )}
+
+      {/* Left Operations Sidebar */}
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 shrink-0 flex flex-col bg-[#081224] text-slate-700 border-r border-slate-200 transition-transform duration-200 lg:translate-x-0 ${
+          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Brand Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="grid size-9 place-items-center rounded-xl bg-slate-100 text-[#0f3b6c] border border-[#0f3b6c]/20 shadow-xs">
+              <ShieldCheck className="size-5" />
+            </div>
+            <div>
+              <p className="font-bold text-sm text-slate-900 tracking-tight">TechnoResolve Control</p>
+              <p className="text-[11px] text-[#0f3b6c] font-mono font-semibold">Administrator</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="lg:hidden p-1 text-slate-400 hover:text-slate-900"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        {/* Nav Groups */}
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+          {navItems.map((group) => (
+            <div key={group.group} className="space-y-1">
+              <p className="text-[11px] font-bold tracking-wider uppercase text-slate-500 px-3 mb-2">
+                {group.group}
+              </p>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeNav === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveNav(item.id);
+                      setIsMobileSidebarOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-slate-100 text-[#0f3b6c] border border-[#0f3b6c]/20 shadow-xs'
+                        : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className={`size-4 shrink-0 ${isActive ? 'text-[#0f3b6c]' : 'text-slate-400'}`} />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge !== undefined && (
+                      <span
+                        className={`px-2 py-0.5 text-[10px] font-extrabold rounded-full ${
+                          item.id === 'approvals' && item.badge > 0
+                            ? 'bg-amber-500 text-slate-950 animate-pulse'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Quick action buttons */}
+        <div className="p-3 border-t border-slate-200 space-y-2">
+          <button
+            onClick={() => setIsOutboxOpen(true)}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-50 hover:bg-[#122e5a] text-[#0f3b6c] text-xs font-semibold border border-cyan-900/50 transition-all cursor-pointer"
+          >
+            <Mail className="size-3.5" />
+            <span>Open Email Outbox ({outbox.length})</span>
+          </button>
+        </div>
+
+        {/* Footer: User profile & Logout */}
+        <div className="p-4 border-t border-slate-200 flex items-center justify-between">
+          <div className="text-xs">
+            <p className="font-bold text-slate-900 truncate max-w-[140px]">{currentUser?.full_name || 'Admin User'}</p>
+            <p className="text-[11px] text-slate-400 font-mono truncate max-w-[140px]">{currentUser?.email}</p>
+          </div>
+          <button
+            onClick={signOut}
+            title="Sign out"
+            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Workspace View */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-[#0f3b6c] text-white shadow-md">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer"
+            >
+              <Menu className="size-4" />
+            </button>
+            <div>
+              <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">System Control Center</h1>
+              <p className="text-xs text-slate-500 font-mono hidden sm:block">{currentUser?.email}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Notification Bell */}
+            <button
+              onClick={() => setIsNotificationCenterOpen(true)}
+              title="Notifications"
+              className="relative p-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all cursor-pointer"
+            >
+              <Bell className="size-4" />
+              {unreadNotificationsCount > 0 && (
+                <span className="absolute -top-1 -right-1 size-4 rounded-full bg-cyan-500 text-slate-950 text-[10px] font-extrabold grid place-items-center shadow-xs">
+                  {unreadNotificationsCount}
+                </span>
+              )}
+            </button>
+
+            {/* Role Switcher */}
+            <RoleSwitcher />
+
+            {/* Export report button */}
+            <button
+              onClick={handleExportCSV}
+              className="hidden sm:flex items-center gap-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-slate-900 text-xs font-semibold px-3.5 py-2 rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              <Download className="size-3.5" />
+              <span>Export</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Content Views */}
+        <main className="p-4 sm:p-8 space-y-6 max-w-7xl mx-auto w-full">
+          {/* Top Admin Notice if Pending Approvals Exist */}
+          {pendingUsers.length > 0 && activeNav !== 'approvals' && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-amber-300 bg-amber-50 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="size-10 rounded-xl bg-amber-200 text-amber-900 grid place-items-center shrink-0">
+                  <UserCheck className="size-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-amber-950">
+                    {pendingUsers.length} User Registration{pendingUsers.length > 1 ? 's' : ''} Awaiting Admin Approval
+                  </h4>
+                  <p className="text-xs text-amber-800 mt-0.5">
+                    New users must be explicitly approved before accessing customer or technician workspaces.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActiveNav('approvals')}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-slate-900 font-bold text-xs shadow-xs cursor-pointer whitespace-nowrap"
+              >
+                <span>Review Approvals ({pendingUsers.length})</span>
+                <ArrowUpRight className="size-3.5" />
+              </button>
+            </motion.div>
+          )}
+
+          <AnimatePresence mode="wait">
+            {/* OVERVIEW TAB */}
+            {activeNav === 'overview' && (
+              <motion.div
+                key="overview"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                {/* 4 Stat Metric Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Card 1: Total requests */}
+                  <motion.div
+                    whileHover={{ y: -2 }}
+                    className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex items-center justify-between"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total requests</p>
+                      <p className="text-3xl font-extrabold text-slate-900">{totalTickets}</p>
+                      <p className="text-xs text-slate-400">all time</p>
+                    </div>
+                    <div className="size-11 rounded-xl bg-cyan-50 text-cyan-600 grid place-items-center">
+                      <Layers className="size-5" />
+                    </div>
+                  </motion.div>
+
+                  {/* Card 2: Open workload */}
+                  <motion.div
+                    whileHover={{ y: -2 }}
+                    className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex items-center justify-between"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Open workload</p>
+                      <p className="text-3xl font-extrabold text-slate-900">{openWorkload}</p>
+                      <p className="text-xs text-slate-400">unresolved</p>
+                    </div>
+                    <div className="size-11 rounded-xl bg-purple-50 text-purple-600 grid place-items-center">
+                      <Clock className="size-5" />
+                    </div>
+                  </motion.div>
+
+                  {/* Card 3: Urgent */}
+                  <motion.div
+                    whileHover={{ y: -2 }}
+                    className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex items-center justify-between"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Urgent</p>
+                      <p className="text-3xl font-extrabold text-slate-900">{urgentTickets}</p>
+                      <p className="text-xs text-slate-400">needs escalation</p>
+                    </div>
+                    <div className="size-11 rounded-xl bg-rose-50 text-rose-600 grid place-items-center">
+                      <AlertOctagon className="size-5" />
+                    </div>
+                  </motion.div>
+
+                  {/* Card 4: AI triage confidence */}
+                  <motion.div
+                    whileHover={{ y: -2 }}
+                    className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex items-center justify-between"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">AI Confidence</p>
+                      <p className="text-3xl font-extrabold text-slate-900">{aiConfidencePct}%</p>
+                      <p className="text-xs text-slate-400">{aiClassifiedCount} auto-triaged</p>
+                    </div>
+                    <div className="size-11 rounded-xl bg-emerald-50 text-emerald-600 grid place-items-center">
+                      <Sparkles className="size-5" />
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* 2 Analytical Charts (7-day Volume + Category distribution) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-extrabold text-slate-900 text-sm">7-Day Ticket Throughput</h3>
+                        <p className="text-xs text-slate-500">Created vs resolved volume</p>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs font-semibold">
+                        <span className="flex items-center gap-1.5 text-blue-600">
+                          <span className="size-2 rounded-full bg-blue-600"></span> Created
+                        </span>
+                        <span className="flex items-center gap-1.5 text-emerald-600">
+                          <span className="size-2 rounded-full bg-emerald-600"></span> Resolved
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={volumeChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorCreated" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#059669" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                          <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: '#0f172a',
+                              borderColor: '#334155',
+                              borderRadius: '12px',
+                              color: '#fff',
+                              fontSize: '12px',
+                            }}
+                          />
+                          <Area type="monotone" dataKey="created" stroke="#2563eb" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCreated)" />
+                          <Area type="monotone" dataKey="resolved" stroke="#059669" strokeWidth={2.5} fillOpacity={1} fill="url(#colorResolved)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-sm">Issue Categories</h3>
+                      <p className="text-xs text-slate-500">Distribution across domains</p>
+                    </div>
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={categoryChartData} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                          <XAxis type="number" hide />
+                          <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: '#0f172a',
+                              borderRadius: '12px',
+                              color: '#fff',
+                              fontSize: '12px',
+                            }}
+                          />
+                          <Bar dataKey="count" fill="#3b82f6" radius={[0, 6, 6, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Status Distribution */}
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-sm">Status Distribution</h3>
+                      <p className="text-xs text-slate-500">Ticket volume by current state</p>
+                    </div>
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={statusChartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={90}
+                            paddingAngle={2}
+                            dataKey="count"
+                          >
+                            {statusChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: '#0f172a',
+                              borderRadius: '12px',
+                              color: '#fff',
+                              fontSize: '12px',
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* Status Legend */}
+                    <div className="flex flex-wrap justify-center gap-4 mt-2">
+                      {statusChartData.map((entry) => (
+                        <div key={entry.name} className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                          <span className="size-2 rounded-full" style={{ backgroundColor: entry.color }}></span>
+                          {entry.name} ({entry.count})
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* System Infrastructure Status (Moved here to share grid) */}
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-extrabold text-slate-900 text-sm">Platform Health</h3>
+                        <p className="text-xs text-slate-500">Real-time backend services</p>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-full">
+                        <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Operational
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 h-full">
+                      {[
+                        { name: 'Cloud Firestore', status: 'Connected', icon: Database },
+                        { name: 'Gemini AI Engine', status: 'Online', icon: Cpu },
+                        { name: 'Email Outbox', status: 'Active', icon: Mail },
+                        { name: 'Access Guard', status: 'Enforced', icon: ShieldCheck },
+                      ].map((service) => {
+                        const Icon = service.icon;
+                        return (
+                          <div key={service.name} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <Icon className="size-4 text-blue-600" />
+                              <span className="text-xs font-bold text-slate-800">{service.name}</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-emerald-600">{service.status}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* USER APPROVALS TAB */}
+            {activeNav === 'approvals' && (
+              <motion.div
+                key="approvals"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h2 className="text-xl font-extrabold text-slate-900">User Approvals</h2>
+                    <p className="text-xs text-slate-500">
+                      Mandatory approval gate: review and authorize newly registered accounts
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200 self-start sm:self-auto">
+                    {pendingUsers.length} Pending Approval
+                  </span>
+                </div>
+
+                <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="border-b border-slate-100 bg-slate-50 font-bold uppercase tracking-wider text-slate-500 text-[10px]">
+                        <tr>
+                          <th className="px-5 py-3.5">User & Email</th>
+                          <th className="px-5 py-3.5">Company</th>
+                          <th className="px-5 py-3.5">Email Status</th>
+                          <th className="px-5 py-3.5">Requested Role</th>
+                          <th className="px-5 py-3.5">Submitted</th>
+                          <th className="px-5 py-3.5 text-right">Approve As</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {pendingUsers.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-5 py-12 text-center text-xs text-slate-500 space-y-2">
+                              <CheckCircle2 className="size-8 text-emerald-500 mx-auto" />
+                              <p className="font-bold text-slate-800 text-sm">All caught up!</p>
+                              <p className="text-slate-400">There are no pending user registration requests at this time.</p>
+                            </td>
+                          </tr>
+                        ) : (
+                          pendingUsers.map((u) => (
+                            <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="px-5 py-3.5">
+                                <p className="font-bold text-slate-900">{u.full_name}</p>
+                                <p className="text-xs text-slate-500 font-mono">{u.email}</p>
+                              </td>
+                              <td className="px-5 py-3.5 text-slate-600">{u.company || 'Enterprise'}</td>
+                              <td className="px-5 py-3.5">
+                                {u.email_verified ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold">
+                                    <CheckCircle2 className="size-3" /> Verified
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2.5 py-0.5 text-[11px] font-semibold">
+                                    <Clock className="size-3" /> Code Sent ({u.verification_code || 'Pending'})
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-5 py-3.5">
+                                <span className="font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded uppercase text-[10px]">
+                                  {u.role}
+                                </span>
+                              </td>
+                              <td className="px-5 py-3.5 text-slate-500">
+                                {new Date(u.created_at).toLocaleDateString()}
+                              </td>
+                              <td className="px-5 py-3.5 text-right space-x-1.5">
+                                <button
+                                  onClick={() => approveUser(u.id, 'user')}
+                                  className="px-2.5 py-1 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer transition-all"
+                                  title="Approve as Standard Customer"
+                                >
+                                  Customer
+                                </button>
+                                <button
+                                  onClick={() => approveUser(u.id, 'technician')}
+                                  className="px-2.5 py-1 text-xs font-bold text-cyan-900 bg-cyan-100 hover:bg-cyan-200 rounded-lg cursor-pointer transition-all"
+                                  title="Approve with Technician privileges"
+                                >
+                                  Technician
+                                </button>
+                                <button
+                                  onClick={() => approveUser(u.id, 'admin')}
+                                  className="px-2.5 py-1 text-xs font-bold text-purple-900 bg-purple-100 hover:bg-purple-200 rounded-lg cursor-pointer transition-all"
+                                  title="Approve as Administrator"
+                                >
+                                  Admin
+                                </button>
+                                <button
+                                  onClick={() => rejectUser(u.id)}
+                                  className="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg cursor-pointer transition-all"
+                                  title="Reject registration"
+                                >
+                                  <UserX className="size-3.5 inline" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* USERS & ROLES TAB */}
+            {activeNav === 'users' && (
+              <motion.div
+                key="users"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-extrabold text-slate-900">Users & Roles</h2>
+                    <p className="text-xs text-slate-500">Manage permissions, elevated technicians, and admin access</p>
+                  </div>
+                  <div className="relative max-w-xs w-full">
+                    <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      placeholder="Search users..."
+                      className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-1.5 text-xs text-slate-800 outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="border-b border-slate-100 bg-slate-50 font-bold uppercase tracking-wider text-slate-500 text-[10px]">
+                        <tr>
+                          <th className="px-5 py-3.5">Name & Email</th>
+                          <th className="px-5 py-3.5">Company</th>
+                          <th className="px-5 py-3.5">Role</th>
+                          <th className="px-5 py-3.5">Email Verified</th>
+                          <th className="px-5 py-3.5">Status</th>
+                          <th className="px-5 py-3.5">Registered</th>
+                          <th className="px-5 py-3.5 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredUsers.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-5 py-8 text-center text-xs text-slate-500">
+                              No users match your search filter.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredUsers.map((u) => (
+                            <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="px-5 py-3.5">
+                                <p className="font-bold text-slate-900">{u.full_name}</p>
+                                <p className="text-xs text-slate-500 font-mono">{u.email}</p>
+                              </td>
+                              <td className="px-5 py-3.5 text-slate-600">{u.company || 'Enterprise'}</td>
+                              <td className="px-5 py-3.5">
+                                <select
+                                  value={u.role}
+                                  onChange={(e) => updateUserRole(u.id, e.target.value as UserRole)}
+                                  className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold capitalize text-slate-800 outline-none cursor-pointer"
+                                >
+                                  <option value="admin">Admin</option>
+                                  <option value="technician">Technician</option>
+                                  <option value="user">Customer (User)</option>
+                                </select>
+                              </td>
+                              <td className="px-5 py-3.5">
+                                {u.email_verified ? (
+                                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                                    <CheckCircle2 className="size-3" /> Yes
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-700 font-semibold flex items-center gap-1">
+                                    <Clock className="size-3" /> Pending ({u.verification_code || '---'})
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-5 py-3.5">
+                                {u.banned ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 px-2.5 py-0.5 text-[11px] font-semibold">
+                                    <Ban className="size-3" /> Suspended
+                                  </span>
+                                ) : u.rejected ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-700 px-2.5 py-0.5 text-[11px] font-semibold">
+                                    Rejected
+                                  </span>
+                                ) : u.is_approved ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold">
+                                    <CheckCircle2 className="size-3" /> Approved
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2.5 py-0.5 text-[11px] font-semibold">
+                                    Pending Admin
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-5 py-3.5 text-slate-500">
+                                {new Date(u.created_at).toLocaleDateString()}
+                              </td>
+                              <td className="px-5 py-3.5 text-right space-x-1.5">
+                                {!u.is_approved && (
+                                  <button
+                                    onClick={() => approveUser(u.id, u.role)}
+                                    className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg cursor-pointer"
+                                  >
+                                    Approve
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => updateUserStatus(u.id, { banned: !u.banned })}
+                                  className="px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-rose-600 border border-slate-200 rounded-lg cursor-pointer"
+                                >
+                                  {u.banned ? 'Restore' : 'Suspend'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ALL REQUESTS TAB */}
+            {activeNav === 'requests' && (
+              <motion.div
+                key="requests"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                {/* Filter controls */}
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-1 items-center gap-2 min-w-[240px] rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2">
+                    <Search className="size-4 text-slate-400 shrink-0" />
+                    <input
+                      value={ticketSearch}
+                      onChange={(e) => setTicketSearch(e.target.value)}
+                      placeholder="Search requests by title, user or company..."
+                      className="w-full bg-transparent text-xs text-slate-900 outline-none placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs">
+                    <select
+                      value={catFilter}
+                      onChange={(e) => setCatFilter(e.target.value)}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-medium text-slate-800 outline-none cursor-pointer"
+                    >
+                      <option value="all">All Categories</option>
+                      {CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-medium text-slate-800 outline-none cursor-pointer"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="new">New</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="escalated">Escalated</option>
+                      <option value="resolved">Resolved</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="border-b border-slate-100 bg-slate-50 font-bold uppercase tracking-wider text-slate-500 text-[10px]">
+                        <tr>
+                          <th className="px-5 py-3.5">ID</th>
+                          <th className="px-5 py-3.5">Title</th>
+                          <th className="px-5 py-3.5">Category</th>
+                          <th className="px-5 py-3.5">Priority</th>
+                          <th className="px-5 py-3.5">Status</th>
+                          <th className="px-5 py-3.5">Requester</th>
+                          <th className="px-5 py-3.5 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredTickets.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-5 py-12 text-center text-xs text-slate-500">
+                              <Inbox className="size-8 text-slate-700 mx-auto mb-2" />
+                              <p className="font-bold text-slate-700 text-sm">No tickets found</p>
+                              <p className="text-slate-400 mt-1">Submitted service requests will appear here in real-time.</p>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredTickets.map((t) => (
+                            <tr
+                              key={t.id}
+                              onClick={() => setSelectedTicket(t)}
+                              className="hover:bg-slate-50/70 cursor-pointer transition-colors"
+                            >
+                              <td className="px-5 py-3.5 font-mono font-bold text-blue-600">{t.id}</td>
+                              <td className="px-5 py-3.5 font-bold text-slate-900">{t.title}</td>
+                              <td className="px-5 py-3.5 text-slate-500">{getCategoryLabel(t.category)}</td>
+                              <td className="px-5 py-3.5">
+                                <span className="capitalize font-semibold text-slate-700">{t.priority}</span>
+                              </td>
+                              <td className="px-5 py-3.5">
+                                <span className="capitalize font-semibold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full">
+                                  {formatStatus(t.status)}
+                                </span>
+                              </td>
+                              <td className="px-5 py-3.5 text-slate-700">{t.requester_name}</td>
+                              <td className="px-5 py-3.5 text-right">
+                                <button className="text-blue-600 font-bold hover:underline cursor-pointer">Inspect</button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* AI GOVERNANCE & COMPLIANCE TAB */}
+            {activeNav === 'governance' && (
+              <motion.div
+                key="governance"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900">AI Governance & Compliance</h2>
+                  <p className="text-xs text-slate-600 mt-1">Manage AI decision boundaries, automated workflows, and data ethics.</p>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-5">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                      <Cpu className="size-5 text-indigo-600" />
+                      <h3 className="font-bold text-slate-900 text-sm">Automated Workflow Engine</h3>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div>
+                          <p className="font-bold text-slate-900 text-xs">High-Priority Escalation</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Auto-escalate tickets assessed as 'Critical' with &gt; 80% confidence</p>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">ACTIVE</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div>
+                          <p className="font-bold text-slate-900 text-xs">Draft Response Generation</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Pre-generate contextually aware AI responses for Technician review</p>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">ACTIVE</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-5">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                      <ShieldCheck className="size-5 text-indigo-600" />
+                      <h3 className="font-bold text-slate-900 text-sm">Responsible AI & Data Privacy</h3>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div>
+                          <p className="font-bold text-slate-900 text-xs">Human-in-the-loop (HITL)</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">AI drafts require manual technician approval before dispatch</p>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">ENFORCED</span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div>
+                          <p className="font-bold text-slate-900 text-xs">Data Retention & PII Scrubbing</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Automated redaction of sensitive customer info in training datasets</p>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">COMPLIANT</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                  <h3 className="font-bold text-slate-900 text-sm">Recent AI Decisions Log</h3>
+                  <div className="border border-slate-200 rounded-xl overflow-hidden">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                          <th className="px-4 py-3 font-semibold text-slate-500">TICKET ID</th>
+                          <th className="px-4 py-3 font-semibold text-slate-500">AI ASSESSMENT</th>
+                          <th className="px-4 py-3 font-semibold text-slate-500">CONFIDENCE</th>
+                          <th className="px-4 py-3 font-semibold text-slate-500">REASONING AUDIT</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {tickets.slice(0, 5).map((t) => (
+                          <tr key={t.id} className="hover:bg-slate-50/50">
+                            <td className="px-4 py-3 font-mono font-semibold text-slate-800">{t.id}</td>
+                            <td className="px-4 py-3">
+                              <span className="capitalize font-medium text-slate-700">{t.ai_suggested_priority || t.priority}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`font-mono ${(t.ai_confidence || 0) > 0.8 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                {Math.round((t.ai_confidence || 0) * 100)}%
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-slate-500 truncate max-w-[300px]">
+                              {t.ai_reasoning || 'Standard categorization'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* AUDIT LOG / EMAIL OUTBOX TAB */}
+            {activeNav === 'audit' && (
+              <motion.div
+                key="audit"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-extrabold text-slate-900">Email Outbox & Delivery Logs</h2>
+                    <p className="text-xs text-slate-500">Live dispatch log of verification codes, ticket alerts, and admin notices</p>
+                  </div>
+                  <button
+                    onClick={() => setIsOutboxOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-slate-900 text-xs font-bold shadow-xs cursor-pointer"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    <span>Open Full Viewer</span>
+                  </button>
+                </div>
+
+                <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden divide-y divide-slate-100">
+                  {outbox.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-slate-500">No email records in outbox yet.</div>
+                  ) : (
+                    outbox.map((mail) => (
+                      <div key={mail.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-50 transition-colors">
+                        <div>
+                          <p className="font-bold text-slate-900 text-xs">{mail.subject}</p>
+                          <p className="text-[11px] text-slate-500 font-mono">
+                            To: {mail.to} · {new Date(mail.created_at).toLocaleString()}
+                          </p>
+                          {mail.payload && (
+                            <p className="text-[11px] text-slate-600 mt-1 font-mono bg-slate-50 p-2 rounded border border-slate-200/70 line-clamp-2">
+                              {mail.payload}
+                            </p>
+                          )}
+                        </div>
+                        <span className="rounded-full bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 text-[10px] self-start sm:self-auto">
+                          SENT
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* REPORTS TAB */}
+            {activeNav === 'reports' && (
+              <motion.div
+                key="reports"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-3">
+                  <h2 className="text-xl font-extrabold text-slate-900">Enterprise Reports & SLA Insights</h2>
+                  <p className="text-xs text-slate-600">Export audit-ready CSV records of all resolved tickets, SLA compliance, and user roles.</p>
+                  <button
+                    onClick={handleExportCSV}
+                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 text-slate-900 px-4 py-2 text-xs font-bold cursor-pointer"
+                  >
+                    <Download className="size-4" /> Download Complete Report
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* SETTINGS TAB */}
+            {activeNav === 'settings' && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                  <h2 className="text-xl font-extrabold text-slate-900">System Security & Access Settings</h2>
+                  <div className="space-y-3 text-xs text-slate-700">
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-slate-900">Mandatory Administrator Approval</p>
+                        <p className="text-slate-500">Require administrator confirmation before new users can log in</p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                        ENFORCED
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-slate-900">Mandatory Email Verification</p>
+                        <p className="text-slate-500">Require 6-digit confirmation code on all user registrations</p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                        ENFORCED
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* INTEGRATIONS & API KEYS TABS */}
+            {(activeNav === 'integrations' || activeNav === 'api') && (
+              <motion.div
+                key="other"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs"
+              >
+                <h2 className="text-xl font-extrabold text-slate-900 capitalize">{activeNav}</h2>
+                <p className="text-xs text-slate-500 mt-1">Managed integration endpoints and active webhook secrets.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
+
+      {/* Ticket Modal */}
+      <TicketChatModal
+        ticket={selectedTicket}
+        onClose={() => setSelectedTicket(null)}
+      />
+    </div>
+  );
+};

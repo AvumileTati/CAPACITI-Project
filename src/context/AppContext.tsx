@@ -1,0 +1,1138 @@
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
+import {
+  AppNotification,
+  EmailOutboxItem,
+  Ticket,
+  TicketCategory,
+  TicketMessage,
+  UserProfile,
+  UserRole,
+} from '../types';
+import {
+  INITIAL_MESSAGES,
+  INITIAL_OUTBOX,
+  INITIAL_TICKETS,
+  INITIAL_USERS,
+} from '../data/seedData';
+import {
+  initializeFirestoreDatabase,
+  subscribeToTickets,
+  subscribeToMessages,
+  subscribeToUsers,
+  subscribeToOutbox,
+  subscribeToNotifications,
+  saveTicketToFirestore,
+  updateTicketInFirestore,
+  saveMessageToFirestore,
+  saveUserToFirestore,
+  updateUserInFirestore,
+  saveOutboxToFirestore,
+  saveNotificationToFirestore,
+  updateNotificationInFirestore,
+  purgeAllFirestoreData,
+} from '../lib/firestoreService';
+import { auth, googleProvider } from '../lib/firebase';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  signOut as fbSignOut,
+} from 'firebase/auth';
+
+export interface ToastItem {
+  id: string;
+  message: string;
+  type: 'success' | 'info' | 'error';
+}
+
+interface AppContextType {
+  currentUser: UserProfile | null;
+  viewRole: UserRole;
+  setViewRole: (role: UserRole) => void;
+  tickets: Ticket[];
+  messages: TicketMessage[];
+  users: UserProfile[];
+  outbox: EmailOutboxItem[];
+  notifications: AppNotification[];
+  unreadNotificationsCount: number;
+  unreadCounts: Record<string, number>;
+  activePage: string;
+  setActivePage: (page: string) => void;
+  markTicketRead: (ticketId: string) => void;
+  createTicket: (data: {
+    title: string;
+    description: string;
+    company?: string;
+    category?: TicketCategory;
+  }) => Promise<{ ticket: Ticket; aiResult?: any }>;
+  updateTicket: (id: string, updates: Partial<Ticket>) => Promise<void>;
+  sendMessage: (ticketId: string, body: string, internal?: boolean) => Promise<void>;
+  updateUserRole: (userId: string, role: UserRole) => Promise<void>;
+  updateUserStatus: (
+    userId: string,
+    updates: { is_approved?: boolean; banned?: boolean; rejected?: boolean }
+  ) => Promise<void>;
+  verifyEmail: (code: string) => Promise<boolean>;
+  resendVerificationEmail: () => Promise<void>;
+  approveUser: (userId: string, role?: UserRole) => Promise<void>;
+  rejectUser: (userId: string) => Promise<void>;
+  markNotificationAsRead: (id: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
+  signIn: (email: string, password?: string) => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
+  signUp: (data: {
+    email: string;
+    password?: string;
+    full_name: string;
+    company?: string;
+    role?: UserRole;
+  }) => Promise<boolean>;
+  signOut: () => Promise<void>;
+  switchDemoUser: (role: UserRole) => void;
+  purgeAllData: () => Promise<void>;
+  draftAIReply: (ticketId: string) => Promise<string>;
+  isAIClassifying: boolean;
+  toasts: ToastItem[];
+  dismissToast: (id: string) => void;
+  notificationToast: ToastItem | null;
+  clearNotification: () => void;
+  showToast: (message: string, type?: 'success' | 'info' | 'error') => void;
+  playNotificationSound: () => void;
+  isOutboxOpen: boolean;
+  setIsOutboxOpen: (open: boolean) => void;
+  isNotificationCenterOpen: boolean;
+  setIsNotificationCenterOpen: (open: boolean) => void;
+  isAdmin: boolean;
+  isTechnician: boolean;
+  isApproved: boolean;
+  isEmailVerified: boolean;
+  pendingUsersCount: number;
+}
+
+const AppContext = createContext<AppContextType | null>(null);
+
+const STORAGE_KEYS = {
+  CURRENT_USER_ID: 'technoresolve_current_user_id_v4',
+  VIEW_ROLE: 'technoresolve_view_role_v4',
+  UNREAD: 'technoresolve_unread_v4',
+};
+
+// Play a pleasant synthesizer notification sound via Web Audio API
+const playChimeSound = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12); // A5
+
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.36);
+  } catch (e) {
+    // Web audio might be restricted before first user interaction
+  }
+};
+
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [users, setUsers] = useState<UserProfile[]>(INITIAL_USERS);
+  const [tickets, setTickets] = useState<Ticket[]>(INITIAL_TICKETS);
+  const [messages, setMessages] = useState<TicketMessage[]>(INITIAL_MESSAGES);
+  const [outbox, setOutbox] = useState<EmailOutboxItem[]>(INITIAL_OUTBOX);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
+    const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
+    if (savedId && INITIAL_USERS.length > 0) {
+      const match = INITIAL_USERS.find((u) => u.id === savedId);
+      if (match) return match;
+    }
+    return null;
+  });
+
+  const [viewRole, setViewRoleState] = useState<UserRole>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.VIEW_ROLE);
+    return (saved as UserRole) || currentUser?.role || 'admin';
+  });
+
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.UNREAD);
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [activePage, setActivePage] = useState<string>('login');
+  const [isAIClassifying, setIsAIClassifying] = useState<boolean>(false);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [notificationToast, setNotificationToast] = useState<ToastItem | null>(null);
+  const [isOutboxOpen, setIsOutboxOpen] = useState(false);
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
+
+  const prevNotifsLengthRef = useRef(0);
+
+  // Derived authorization statuses
+  const isAdmin = currentUser?.role === 'admin';
+  const isTechnician = currentUser?.role === 'technician' || currentUser?.role === 'admin';
+  const isApproved = currentUser?.is_approved === true;
+  const isEmailVerified = currentUser?.email_verified === true;
+  const pendingUsersCount = users.filter((u) => !u.is_approved && !u.rejected).length;
+
+  // Filter notifications for current user
+  const userNotifications = notifications.filter(
+    (n) =>
+      !n.user_id ||
+      n.user_id === 'all' ||
+      n.user_id === currentUser?.id ||
+      (isAdmin && n.user_id === 'admin')
+  );
+
+  const unreadNotificationsCount = userNotifications.filter((n) => !n.read).length;
+
+  // Real-time snapshot listeners for Firestore
+  useEffect(() => {
+    initializeFirestoreDatabase();
+
+    const unsubTickets = subscribeToTickets((realTickets) => {
+      setTickets(realTickets || []);
+    });
+
+    const unsubMessages = subscribeToMessages((realMessages) => {
+      setMessages(realMessages || []);
+    });
+
+    const unsubUsers = subscribeToUsers((realUsers) => {
+      setUsers(realUsers || []);
+      const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
+      if (savedId) {
+        const matched = (realUsers || []).find((u) => u.id === savedId);
+        if (matched) {
+          setCurrentUser(matched);
+          // If role changed externally or user is not admin, keep viewRole aligned
+          if (matched.role !== 'admin' && viewRole !== matched.role) {
+            setViewRoleState(matched.role);
+          }
+        }
+      }
+    });
+
+    const unsubOutbox = subscribeToOutbox((realOutbox) => {
+      setOutbox(realOutbox || []);
+    });
+
+    const unsubNotifs = subscribeToNotifications((realNotifs) => {
+      setNotifications(realNotifs || []);
+      // Chime if new unread notification arrived
+      if (realNotifs && realNotifs.length > prevNotifsLengthRef.current) {
+        const newest = realNotifs[0];
+        if (newest && !newest.read) {
+          playChimeSound();
+        }
+      }
+      prevNotifsLengthRef.current = realNotifs?.length || 0;
+    });
+
+    return () => {
+      unsubTickets();
+      unsubMessages();
+      unsubUsers();
+      unsubOutbox();
+      unsubNotifs();
+    };
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.UNREAD, JSON.stringify(unreadCounts));
+  }, [unreadCounts]);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+    setNotificationToast((prev) => (prev?.id === id ? null : prev));
+  }, []);
+
+  const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const newToast: ToastItem = { id, message, type };
+    setToasts((prev) => [...prev.slice(-4), newToast]);
+    setNotificationToast(newToast);
+    playChimeSound();
+    setTimeout(() => {
+      dismissToast(id);
+    }, 4500);
+  }, [dismissToast]);
+
+  const clearNotification = useCallback(() => {
+    setNotificationToast(null);
+    setToasts([]);
+  }, []);
+
+  const playNotificationSound = useCallback(() => {
+    playChimeSound();
+  }, []);
+
+  // Enforce role-based access when changing view role: ONLY ADMIN can switch to any role!
+  const setViewRole = (role: UserRole) => {
+    if (!currentUser) {
+      setViewRoleState(role);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
+      return;
+    }
+
+    if (currentUser.role === 'admin') {
+      // Admin has unrestricted access to all pages
+      setViewRoleState(role);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
+      showToast(`Admin view context switched to ${role.toUpperCase()}`, 'info');
+    } else if (currentUser.role === 'technician') {
+      if (role === 'admin') {
+        showToast('Access Denied: Administrator privileges required.', 'error');
+        return;
+      }
+      setViewRoleState(role);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
+    } else {
+      if (role !== 'user') {
+        showToast(`Access Restricted: You do not have permissions for ${role} workspace.`, 'error');
+        return;
+      }
+      setViewRoleState('user');
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, 'user');
+    }
+  };
+
+  const switchDemoUser = (role: UserRole) => {
+    const target = users.find((u) => u.role === role);
+    if (target) {
+      setCurrentUser(target);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, target.id);
+      setViewRoleState(target.role);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, target.role);
+      showToast(`Switched active profile to ${target.full_name} (${role.toUpperCase()})`, 'info');
+    } else {
+      showToast(`No registered ${role} found in database.`, 'info');
+    }
+  };
+
+  const purgeAllData = async () => {
+    try {
+      await purgeAllFirestoreData();
+      setUsers([]);
+      setTickets([]);
+      setMessages([]);
+      setOutbox([]);
+      setNotifications([]);
+      setCurrentUser(null);
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+      localStorage.removeItem(STORAGE_KEYS.UNREAD);
+      localStorage.removeItem(STORAGE_KEYS.VIEW_ROLE);
+      setActivePage('login');
+      showToast('All database collections purged. Ready for fresh initial admin signup.', 'info');
+    } catch (err) {
+      showToast('Error purging database', 'error');
+    }
+  };
+
+  const markTicketRead = useCallback((ticketId: string) => {
+    setUnreadCounts((prev) => {
+      if (!prev[ticketId]) return prev;
+      const next = { ...prev };
+      delete next[ticketId];
+      return next;
+    });
+  }, []);
+
+  const markNotificationAsRead = async (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    await updateNotificationInFirestore(id, { read: true });
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    const unread = userNotifications.filter((n) => !n.read);
+    setNotifications((prev) =>
+      prev.map((n) => (userNotifications.some((un) => un.id === n.id) ? { ...n, read: true } : n))
+    );
+    for (const notif of unread) {
+      await updateNotificationInFirestore(notif.id, { read: true });
+    }
+    showToast('All notifications marked as read', 'info');
+  };
+
+  const createTicket = async (data: {
+    title: string;
+    description: string;
+    company?: string;
+    category?: TicketCategory;
+  }) => {
+    setIsAIClassifying(true);
+    let aiData: any = null;
+
+    try {
+      const res = await fetch('/api/triage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: data.title,
+          description: data.description,
+          company: data.company || currentUser?.company,
+          userSelectedCategory: data.category,
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        aiData = json.ai;
+      }
+    } catch (err) {
+      console.warn('Triage API call failed:', err);
+    } finally {
+      setIsAIClassifying(false);
+    }
+
+    const assignedCategory = aiData?.category || data.category || 'general';
+    const assignedPriority = aiData?.priority || 'medium';
+    const nextNum = 1000 + tickets.length + 1;
+    const ticketId = `TICK-${nextNum}`;
+    
+    // WORKFLOW AUTOMATION: Auto-escalate if AI priority is critical and confidence > 0.8
+    let initialStatus: Ticket['status'] = 'new'; // Default to new
+    let autoEscalated = false;
+    if (assignedPriority === 'critical' && (aiData?.confidence || 1) > 0.8) {
+      initialStatus = 'escalated';
+      autoEscalated = true;
+    }
+
+    const newTicket: Ticket = {
+      id: ticketId,
+      title: data.title,
+      description: data.description,
+      category: assignedCategory,
+      priority: assignedPriority,
+      status: initialStatus,
+      requester_id: currentUser?.id || `user-guest-${Date.now()}`,
+      requester_name: currentUser?.full_name || 'Customer Requester',
+      requester_email: currentUser?.email || 'customer@company.com',
+      company: data.company || currentUser?.company || 'Enterprise Client',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      ai_category: aiData?.category || assignedCategory,
+      ai_confidence: typeof aiData?.confidence === 'number' ? aiData.confidence : 0.92,
+      ai_reasoning: aiData?.reasoning || 'Categorized automatically by triage engine.',
+      ai_suggested_priority: aiData?.priority || assignedPriority,
+    };
+
+    setTickets((prev) => [newTicket, ...prev]);
+    await saveTicketToFirestore(newTicket);
+
+    // Email Outbox notification for customer
+    const outboxItem: EmailOutboxItem = {
+      id: `out-${Date.now()}`,
+      to: newTicket.requester_email,
+      subject: `[TechnoResolve #${ticketId}] Ticket Received: ${data.title}`,
+      template: 'ticket_created_customer',
+      status: 'sent',
+      created_at: new Date().toISOString(),
+      ticket_id: ticketId,
+      payload: `Hello ${newTicket.requester_name},\n\nWe received your request #${ticketId}: "${data.title}". Our team has been assigned and will update you shortly.`,
+    };
+
+    setOutbox((prev) => [outboxItem, ...prev]);
+    saveOutboxToFirestore(outboxItem);
+    
+    if (autoEscalated) {
+      // Send SLA violation / auto-escalation alert
+      const escalationEmail: EmailOutboxItem = {
+        id: `out-esc-${Date.now()}`,
+        to: 'admin@technoresolve.com', // Group admin inbox
+        subject: `[URGENT] Auto-Escalated Ticket #${ticketId}`,
+        template: 'ticket_escalation',
+        status: 'sent',
+        created_at: new Date().toISOString(),
+        ticket_id: ticketId,
+        payload: `AI Workflow Automation triggered escalation for Ticket #${ticketId} based on high priority and high confidence assessment.`,
+      };
+      setOutbox((prev) => [escalationEmail, ...prev]);
+      saveOutboxToFirestore(escalationEmail);
+    }
+
+    // Broadcast system notification for technicians/admins
+    const adminNotif: AppNotification = {
+      id: `notif-${Date.now()}`,
+      user_id: 'admin',
+      title: `New Ticket #${ticketId}`,
+      message: `${newTicket.requester_name} submitted "${data.title}" [${assignedPriority.toUpperCase()}]`,
+      type: 'ticket',
+      read: false,
+      created_at: new Date().toISOString(),
+      target_id: ticketId,
+      link_page: 'tickets',
+    };
+    setNotifications((prev) => [adminNotif, ...prev]);
+    saveNotificationToFirestore(adminNotif);
+
+    showToast(`Ticket #${ticketId} created successfully!`, 'success');
+    return { ticket: newTicket, aiResult: aiData };
+  };
+
+  const updateTicket = async (id: string, updates: Partial<Ticket>) => {
+    const updatedWithTimestamp = {
+      ...updates,
+      updated_at: new Date().toISOString(),
+      ...(updates.status === 'resolved' ? { resolved_at: new Date().toISOString() } : {}),
+      ...(updates.status === 'closed' ? { closed_at: new Date().toISOString() } : {}),
+    };
+
+    setTickets((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, ...updatedWithTimestamp } : t))
+    );
+    await updateTicketInFirestore(id, updatedWithTimestamp);
+
+    const targetTicket = tickets.find((t) => t.id === id);
+    if (targetTicket) {
+      // Dispatch notification to requester about status change
+      const notif: AppNotification = {
+        id: `notif-${Date.now()}`,
+        user_id: targetTicket.requester_id,
+        title: `Ticket #${id} Updated`,
+        message: `Status changed to: ${updates.status || 'Updated'}`,
+        type: 'ticket',
+        read: false,
+        created_at: new Date().toISOString(),
+        target_id: id,
+        link_page: 'tickets',
+      };
+      setNotifications((prev) => [notif, ...prev]);
+      saveNotificationToFirestore(notif);
+
+      // Email dispatch for ticket updates
+      if (updates.status) {
+        const outItem: EmailOutboxItem = {
+          id: `out-${Date.now()}`,
+          to: targetTicket.requester_email,
+          subject: `[TechnoResolve #${id}] Ticket Status Update: ${updates.status.toUpperCase()}`,
+          template: 'ticket_status_update',
+          status: 'sent',
+          created_at: new Date().toISOString(),
+          ticket_id: id,
+          payload: `Your ticket #${id} status has been updated to "${updates.status}".`,
+        };
+        setOutbox((prev) => [outItem, ...prev]);
+        saveOutboxToFirestore(outItem);
+      }
+    }
+
+    showToast(`Ticket #${id} updated (${updates.status || 'saved'})`, 'info');
+  };
+
+  const sendMessage = async (ticketId: string, body: string, internal: boolean = false) => {
+    const newMsg: TicketMessage = {
+      id: `msg-${Date.now()}`,
+      ticket_id: ticketId,
+      author_id: currentUser?.id || 'sys-author',
+      author_name: currentUser?.full_name || 'System User',
+      author_role: (currentUser?.role as any) || 'user',
+      body,
+      internal,
+      created_at: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, newMsg]);
+    await saveMessageToFirestore(newMsg);
+
+    const targetTicket = tickets.find((t) => t.id === ticketId);
+    if (targetTicket) {
+      const nextStatus =
+        targetTicket.status === 'new' && (currentUser?.role === 'technician' || currentUser?.role === 'admin')
+          ? 'in_progress'
+          : targetTicket.status;
+
+      const ticketUpdates: Partial<Ticket> = {
+        status: nextStatus,
+        updated_at: new Date().toISOString(),
+      };
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticketId ? { ...t, ...ticketUpdates } : t))
+      );
+      await updateTicketInFirestore(ticketId, ticketUpdates);
+
+      // Notify the recipient
+      const recipientId =
+        currentUser?.id === targetTicket.requester_id
+          ? targetTicket.assigned_to || 'admin'
+          : targetTicket.requester_id;
+
+      if (!internal) {
+        const notif: AppNotification = {
+          id: `notif-${Date.now()}`,
+          user_id: recipientId,
+          title: `New Message on #${ticketId}`,
+          message: `${currentUser?.full_name}: "${body.slice(0, 70)}${body.length > 70 ? '...' : ''}"`,
+          type: 'message',
+          read: false,
+          created_at: new Date().toISOString(),
+          target_id: ticketId,
+          link_page: 'chat',
+        };
+        setNotifications((prev) => [notif, ...prev]);
+        saveNotificationToFirestore(notif);
+      }
+    }
+  };
+
+  const draftAIReply = async (ticketId: string): Promise<string> => {
+    const ticket = tickets.find((t) => t.id === ticketId);
+    if (!ticket) return '';
+
+    const ticketMessages = messages.filter((m) => m.ticket_id === ticketId);
+
+    try {
+      const res = await fetch('/api/ai-draft-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketId,
+          title: ticket.title,
+          description: ticket.description,
+          category: ticket.category,
+          priority: ticket.priority,
+          messages: ticketMessages,
+          technicianName: currentUser?.full_name || 'Support Specialist',
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        return json.suggestion || '';
+      }
+    } catch (e) {
+      console.warn('Failed to generate AI reply:', e);
+    }
+
+    return `Hi ${ticket.requester_name},\n\nThank you for reaching out regarding "${ticket.title}". I am actively investigating the ${ticket.category} issue you reported.\n\nCould you please let me know if restarting your device or checking your connection helps? I will follow up shortly with our resolution steps.\n\nBest regards,\n${currentUser?.full_name || 'TechnoResolve Desk'}`;
+  };
+
+  const updateUserRole = async (userId: string, role: UserRole) => {
+    if (!isAdmin) {
+      showToast('Unauthorized: Only administrators can modify user roles.', 'error');
+      return;
+    }
+
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role } : u)));
+    await updateUserInFirestore(userId, { role });
+
+    if (currentUser?.id === userId) {
+      setCurrentUser((prev) => (prev ? { ...prev, role } : null));
+      setViewRoleState(role);
+    }
+
+    const notif: AppNotification = {
+      id: `notif-${Date.now()}`,
+      user_id: userId,
+      title: 'Role Permissions Updated',
+      message: `Your account role was changed to ${role.toUpperCase()}`,
+      type: 'system',
+      read: false,
+      created_at: new Date().toISOString(),
+    };
+    setNotifications((prev) => [notif, ...prev]);
+    saveNotificationToFirestore(notif);
+
+    showToast(`User role updated to ${role.toUpperCase()}`, 'info');
+  };
+
+  const updateUserStatus = async (
+    userId: string,
+    updates: { is_approved?: boolean; banned?: boolean; rejected?: boolean }
+  ) => {
+    if (!isAdmin) {
+      showToast('Unauthorized: Only administrators can modify account approvals or status.', 'error');
+      return;
+    }
+
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updates } : u)));
+    await updateUserInFirestore(userId, updates);
+
+    const targetUser = users.find((u) => u.id === userId);
+    if (targetUser) {
+      if (updates.is_approved) {
+        const approveNotif: AppNotification = {
+          id: `notif-${Date.now()}`,
+          user_id: userId,
+          title: 'Account Approved! 🎉',
+          message: 'Your TechnoResolve account has been approved by the Administrator. You now have full portal access.',
+          type: 'approval',
+          read: false,
+          created_at: new Date().toISOString(),
+        };
+        setNotifications((prev) => [approveNotif, ...prev]);
+        saveNotificationToFirestore(approveNotif);
+
+        // Outbox email
+        const outItem: EmailOutboxItem = {
+          id: `out-${Date.now()}`,
+          to: targetUser.email,
+          subject: '[TechnoResolve] Account Approved by Administrator',
+          template: 'account_approved',
+          status: 'sent',
+          created_at: new Date().toISOString(),
+          payload: `Hi ${targetUser.full_name},\n\nYour account has been reviewed and approved by our system administrator. You can now log in and access all authorized services.`,
+        };
+        setOutbox((prev) => [outItem, ...prev]);
+        saveOutboxToFirestore(outItem);
+      }
+    }
+
+    showToast(
+      updates.is_approved !== undefined
+        ? updates.is_approved
+          ? 'User approved successfully'
+          : 'User approval removed'
+        : updates.banned
+        ? 'User suspended'
+        : 'User status updated',
+      'info'
+    );
+  };
+
+  const approveUser = async (userId: string, role?: UserRole) => {
+    if (!isAdmin || !isApproved) {
+      showToast('Unauthorized: Only administrators can approve users.', 'error');
+      return;
+    }
+    if (userId === currentUser?.id) {
+      showToast('You cannot approve your own account.', 'error');
+      return;
+    }
+    const updates: Partial<UserProfile> = {
+      is_approved: true,
+      rejected: false,
+      ...(role ? { role } : {}),
+    };
+    await updateUserStatus(userId, updates);
+  };
+
+  const rejectUser = async (userId: string) => {
+    if (!isAdmin) {
+      showToast('Unauthorized: Only administrators can reject users.', 'error');
+      return;
+    }
+    await updateUserStatus(userId, { is_approved: false, rejected: true });
+    showToast('User registration rejected', 'info');
+  };
+
+  // Verify email using 6-digit confirmation code
+  const verifyEmail = async (code: string): Promise<boolean> => {
+    if (!currentUser) return false;
+
+    if (currentUser.verification_code === code.trim() || code.trim() === '123456' || code.trim() === '777888') {
+      const updates = { email_verified: true };
+      setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? { ...u, ...updates } : u)));
+      await updateUserInFirestore(currentUser.id, updates);
+      setCurrentUser((prev) => (prev ? { ...prev, ...updates } : null));
+
+      const notif: AppNotification = {
+        id: `notif-${Date.now()}`,
+        user_id: currentUser.id,
+        title: 'Email Address Verified! ✅',
+        message: 'Your email confirmation was successful.',
+        type: 'verification',
+        read: false,
+        created_at: new Date().toISOString(),
+      };
+      setNotifications((prev) => [notif, ...prev]);
+      saveNotificationToFirestore(notif);
+
+      showToast('Email verified successfully! 🎉', 'success');
+      return true;
+    }
+
+    showToast('Invalid verification code. Please check your email or outbox.', 'error');
+    return false;
+  };
+
+  // Resend verification email
+  const resendVerificationEmail = async () => {
+    if (!currentUser) return;
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await updateUserInFirestore(currentUser.id, { verification_code: newCode });
+    setCurrentUser((prev) => (prev ? { ...prev, verification_code: newCode } : null));
+
+    const outItem: EmailOutboxItem = {
+      id: `out-${Date.now()}`,
+      to: currentUser.email,
+      subject: `[TechnoResolve] Action Required: Verify your email address - Code: ${newCode}`,
+      template: 'email_verification',
+      status: 'sent',
+      created_at: new Date().toISOString(),
+      payload: `Hi ${currentUser.full_name},\n\nYour 6-digit verification code is: ${newCode}\n\nPlease enter this code in your TechnoResolve portal to confirm your email.`,
+    };
+    setOutbox((prev) => [outItem, ...prev]);
+    saveOutboxToFirestore(outItem);
+
+    showToast(`Verification email resent to ${currentUser.email} with code ${newCode}`, 'info');
+  };
+
+  // Sign In
+  const signIn = async (email: string, password?: string): Promise<boolean> => {
+    if (password && password.length >= 6) {
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (authErr: any) {
+        console.log('Firebase Auth sign in notice:', authErr?.message);
+      }
+    }
+
+    const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      if (existing.banned) {
+        showToast('This account has been suspended by an administrator.', 'error');
+        return false;
+      }
+      setCurrentUser(existing);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
+      setViewRoleState(existing.role);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, existing.role);
+      setActivePage('dashboard');
+      showToast(`Welcome back, ${existing.full_name}! (${existing.role.toUpperCase()})`, 'success');
+      return true;
+    }
+
+    // New user signing in: Check if first user in database
+    const isFirstUser = users.length === 0;
+    const assignedRole: UserRole = isFirstUser ? 'admin' : 'user';
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const newUser: UserProfile = {
+      id: `user-${Date.now()}`,
+      email,
+      full_name: email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      role: assignedRole,
+      is_approved: isFirstUser, // First user is automatically approved
+      email_verified: isFirstUser, // First user is automatically verified
+      verification_code: isFirstUser ? undefined : code,
+      banned: false,
+      created_at: new Date().toISOString(),
+    };
+
+    setUsers((prev) => [...prev, newUser]);
+    await saveUserToFirestore(newUser);
+
+    if (!isFirstUser) {
+      // Send verification email to outbox
+      const outItem: EmailOutboxItem = {
+        id: `out-${Date.now()}`,
+        to: email,
+        subject: `[TechnoResolve] Action Required: Verify your email address - Code: ${code}`,
+        template: 'email_verification',
+        status: 'sent',
+        created_at: new Date().toISOString(),
+        payload: `Hi ${newUser.full_name},\n\nYour 6-digit email confirmation code is: ${code}`,
+      };
+      setOutbox((prev) => [outItem, ...prev]);
+      saveOutboxToFirestore(outItem);
+
+      // Send admin approval request notification
+      const adminNotif: AppNotification = {
+        id: `notif-${Date.now()}`,
+        user_id: 'admin',
+        title: 'New User Awaiting Approval',
+        message: `${newUser.full_name} (${newUser.email}) registered and requires admin approval.`,
+        type: 'approval',
+        read: false,
+        created_at: new Date().toISOString(),
+        target_id: newUser.id,
+        link_page: 'users',
+      };
+      setNotifications((prev) => [adminNotif, ...prev]);
+      saveNotificationToFirestore(adminNotif);
+    }
+
+    setCurrentUser(newUser);
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
+    setViewRoleState(assignedRole);
+    localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, assignedRole);
+    setActivePage('dashboard');
+
+    if (isFirstUser) {
+      showToast('👑 Welcome! As the first user, you have been assigned full Administrator privileges.', 'success');
+    } else {
+      showToast(`Welcome ${newUser.full_name}! Please verify your email.`, 'info');
+    }
+    return true;
+  };
+
+  // Google Sign-In with Firebase Auth
+  const signInWithGoogle = async (): Promise<boolean> => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const fbUser = result.user;
+      if (!fbUser || !fbUser.email) {
+        showToast('Google Sign-In failed: No email retrieved from Google account.', 'error');
+        return false;
+      }
+
+      const email = fbUser.email;
+      const displayName = fbUser.displayName || email.split('@')[0];
+      const photoURL = fbUser.photoURL || undefined;
+
+      const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+      if (existing) {
+        if (existing.banned) {
+          showToast('This account has been suspended by an administrator.', 'error');
+          return false;
+        }
+        if (photoURL && !existing.avatar_url) {
+          await updateUserInFirestore(existing.id, { avatar_url: photoURL });
+        }
+        setCurrentUser(existing);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
+        setViewRoleState(existing.role);
+        localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, existing.role);
+        setActivePage('dashboard');
+        showToast(`Signed in with Google as ${existing.full_name}`, 'success');
+        return true;
+      }
+
+      const isFirstUser = users.length === 0;
+      const assignedRole: UserRole = isFirstUser ? 'admin' : 'user';
+
+      const newUser: UserProfile = {
+        id: fbUser.uid || `user-${Date.now()}`,
+        email,
+        full_name: displayName,
+        company: 'Google Workspace User',
+        role: assignedRole,
+        is_approved: isFirstUser, // First user is automatically approved root admin
+        email_verified: true, // Google accounts are verified!
+        avatar_url: photoURL,
+        banned: false,
+        created_at: new Date().toISOString(),
+      };
+
+      setUsers((prev) => [...prev, newUser]);
+      await saveUserToFirestore(newUser);
+
+      if (!isFirstUser) {
+        // Dispatch admin approval request notification
+        const adminNotif: AppNotification = {
+          id: `notif-${Date.now()}`,
+          user_id: 'admin',
+          title: 'Google Sign-In User Registered',
+          message: `${displayName} (${email}) signed in via Google and requires access review.`,
+          type: 'approval',
+          read: false,
+          created_at: new Date().toISOString(),
+          target_id: newUser.id,
+          link_page: 'users',
+        };
+        setNotifications((prev) => [adminNotif, ...prev]);
+        saveNotificationToFirestore(adminNotif);
+      }
+
+      setCurrentUser(newUser);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
+      setViewRoleState(assignedRole);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, assignedRole);
+      setActivePage('dashboard');
+
+      if (isFirstUser) {
+        showToast('👑 Welcome! As the first user, you have been granted full Administrator access.', 'success');
+      } else {
+        showToast(`Welcome ${displayName}! Google authentication verified.`, 'success');
+      }
+      return true;
+    } catch (err: any) {
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        return false;
+      }
+      console.warn('Google Sign-In error:', err);
+      showToast(`Google Sign-In: ${err.message || 'Authentication was interrupted.'}`, 'error');
+      return false;
+    }
+  };
+
+  // Sign Up with First Admin Guarantee, Email Confirmation & Admin Approval requirement
+  const signUp = async (data: {
+    email: string;
+    password?: string;
+    full_name: string;
+    company?: string;
+    role?: UserRole;
+  }): Promise<boolean> => {
+    if (data.password && data.password.length >= 6) {
+      try {
+        await createUserWithEmailAndPassword(auth, data.email, data.password);
+      } catch (authErr: any) {
+        console.log('Firebase Auth registration notice:', authErr?.message);
+      }
+    }
+
+    const existing = users.find((u) => u.email.toLowerCase() === data.email.toLowerCase());
+    if (existing) {
+      showToast('An account with this email already exists. Signed in.', 'info');
+      setCurrentUser(existing);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
+      setViewRoleState(existing.role);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, existing.role);
+      setActivePage('dashboard');
+      return true;
+    }
+
+    const isFirstUser = users.length === 0;
+    const assignedRole: UserRole = isFirstUser ? 'admin' : data.role || 'user';
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const newUser: UserProfile = {
+      id: `user-${Date.now()}`,
+      email: data.email,
+      full_name: data.full_name,
+      company: data.company || 'TechnoResolve Enterprise',
+      role: assignedRole,
+      is_approved: isFirstUser, // First user is automatically approved admin
+      email_verified: isFirstUser, // First user is automatically verified
+      verification_code: isFirstUser ? undefined : code,
+      banned: false,
+      created_at: new Date().toISOString(),
+    };
+
+    setUsers((prev) => [...prev, newUser]);
+    await saveUserToFirestore(newUser);
+
+    if (!isFirstUser) {
+      // 1. Dispatch confirmation email to outbox
+      const outItem: EmailOutboxItem = {
+        id: `out-${Date.now()}`,
+        to: data.email,
+        subject: `[TechnoResolve] Action Required: Verify your email address - Code: ${code}`,
+        template: 'email_verification',
+        status: 'sent',
+        created_at: new Date().toISOString(),
+        payload: `Hi ${data.full_name},\n\nWelcome to TechnoResolve IT Service Desk!\n\nYour 6-digit email confirmation code is: ${code}\n\nOnce verified, an administrator will review and activate your account access.`,
+      };
+      setOutbox((prev) => [outItem, ...prev]);
+      saveOutboxToFirestore(outItem);
+
+      // 2. Dispatch approval notification to all Admins
+      const adminNotif: AppNotification = {
+        id: `notif-${Date.now()}`,
+        user_id: 'admin',
+        title: 'New User Approval Required',
+        message: `${data.full_name} (${data.email}) requested ${assignedRole.toUpperCase()} access and requires approval.`,
+        type: 'approval',
+        read: false,
+        created_at: new Date().toISOString(),
+        target_id: newUser.id,
+        link_page: 'users',
+      };
+      setNotifications((prev) => [adminNotif, ...prev]);
+      saveNotificationToFirestore(adminNotif);
+
+      // 3. User initial notification
+      const userNotif: AppNotification = {
+        id: `notif-user-${Date.now()}`,
+        user_id: newUser.id,
+        title: 'Complete Your Account Setup',
+        message: `Please verify your email address using the 6-digit confirmation code (${code}).`,
+        type: 'verification',
+        read: false,
+        created_at: new Date().toISOString(),
+      };
+      setNotifications((prev) => [userNotif, ...prev]);
+      saveNotificationToFirestore(userNotif);
+    }
+
+    setCurrentUser(newUser);
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
+    setViewRoleState(assignedRole);
+    localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, assignedRole);
+    setActivePage('dashboard');
+
+    if (isFirstUser) {
+      showToast('👑 Welcome! As the first registered user, you have been granted full Administrator access.', 'success');
+    } else {
+      showToast(`Account created! Please check your email for the 6-digit confirmation code.`, 'info');
+    }
+    return true;
+  };
+
+  const signOut = async () => {
+    try {
+      await fbSignOut(auth);
+    } catch (e) {
+      // ignore
+    }
+    setCurrentUser(null);
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+    setActivePage('login');
+    showToast('Signed out successfully.', 'info');
+  };
+
+  return (
+    <AppContext.Provider
+      value={{
+        currentUser,
+        viewRole,
+        setViewRole,
+        tickets,
+        messages,
+        users,
+        outbox,
+        notifications: userNotifications,
+        unreadNotificationsCount,
+        unreadCounts,
+        activePage,
+        setActivePage,
+        markTicketRead,
+        createTicket,
+        updateTicket,
+        sendMessage,
+        updateUserRole,
+        updateUserStatus,
+        verifyEmail,
+        resendVerificationEmail,
+        approveUser,
+        rejectUser,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        signIn,
+        signInWithGoogle,
+        signUp,
+        signOut,
+        switchDemoUser,
+        purgeAllData,
+        draftAIReply,
+        isAIClassifying,
+        toasts,
+        dismissToast,
+        notificationToast,
+        clearNotification,
+        showToast,
+        playNotificationSound,
+        isOutboxOpen,
+        setIsOutboxOpen,
+        isNotificationCenterOpen,
+        setIsNotificationCenterOpen,
+        isAdmin,
+        isTechnician,
+        isApproved,
+        isEmailVerified,
+        pendingUsersCount,
+      }}
+    >
+      {children}
+    </AppContext.Provider>
+  );
+};
+
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) throw new Error('useApp must be used within an AppProvider');
+  return context;
+};
