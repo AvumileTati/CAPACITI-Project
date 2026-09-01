@@ -53,7 +53,7 @@ body {
 }
 
 /* Unified Enterprise Light Theme */
-.theme-user, .theme-admin {
+.theme-user, .theme-technician, .theme-admin {
   --background: #f4f6f8;
   --foreground: #0f172a;
   --surface: #ffffff;
@@ -75,30 +75,6 @@ body {
   --ring: #4caf50;
   --panel-bg: #ffffff;
   --panel-border: #e2e8f0;
-}
-
-.theme-technician {
-  --background: #dce3ea;
-  --foreground: #0f172a;
-  --surface: #edf2f7;
-  --surface-foreground: #0f172a;
-  --card: #f8fafc;
-  --card-foreground: #0f172a;
-  --primary: #1e293b;
-  --primary-foreground: #ffffff;
-  --secondary: #334155;
-  --secondary-foreground: #ffffff;
-  --muted: #cbd5e1;
-  --muted-foreground: #475569;
-  --accent: rgba(30, 41, 59, 0.12);
-  --accent-foreground: #1e293b;
-  --destructive: #be123c;
-  --destructive-foreground: #ffffff;
-  --border: #cbd5e1;
-  --input: #94a3b8;
-  --ring: #1e293b;
-  --panel-bg: #edf2f7;
-  --panel-border: #cbd5e1;
 }
 
 

@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import sys
+
+content = """import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { Ticket, TicketPriority, TicketStatus } from '../types';
 import { CATEGORIES, getCategoryLabel, formatStatus, MACROS } from '../data/seedData';
@@ -185,7 +187,10 @@ export const TechnicianWorkspace: React.FC = () => {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1">
-
+          <button onClick={() => setFilterMode('dashboard')} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors ${filterMode === 'dashboard' ? 'bg-blue-100/50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>
+            <div className="flex items-center gap-3"><Home className="size-4" /> Dashboard</div>
+          </button>
+          
           <button onClick={() => setFilterMode('mine')} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors ${filterMode === 'mine' ? 'bg-blue-100/50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>
             <div className="flex items-center gap-3"><TicketIcon className="size-4" /> My Tickets</div>
             <span className="bg-rose-100 text-rose-600 text-[10px] font-bold px-2 py-0.5 rounded-full">5</span>
@@ -196,6 +201,10 @@ export const TechnicianWorkspace: React.FC = () => {
             <span className="bg-blue-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">2</span>
           </button>
 
+          <button onClick={() => setFilterMode('reports')} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors ${filterMode === 'reports' ? 'bg-blue-100/50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>
+            <div className="flex items-center gap-3"><BarChart2 className="size-4" /> Reports</div>
+            <span className="bg-emerald-100 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
+          </button>
 
           <button className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
             <div className="flex items-center gap-3"><Settings className="size-4" /> Settings</div>
@@ -314,6 +323,13 @@ export const TechnicianWorkspace: React.FC = () => {
               <>
                 {/* Details Header */}
                 <div className="p-6 border-b border-slate-200 shrink-0 space-y-4">
+                  {/* Top tags */}
+                  <div className="flex items-center gap-2">
+                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold">All</span>
+                    <span className="bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1 rounded-full text-xs font-medium">Assigned</span>
+                    <span className="bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1 rounded-full text-xs font-medium">New...</span>
+                  </div>
+
                   {/* Title */}
                   <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-black text-slate-900 tracking-tight">{activeTicket.title}</h2>
@@ -557,3 +573,8 @@ export const TechnicianWorkspace: React.FC = () => {
     </div>
   );
 };
+"""
+
+with open('src/components/TechnicianWorkspace.tsx', 'w') as f:
+    f.write(content)
+print("Replaced TechnicianWorkspace.tsx")
