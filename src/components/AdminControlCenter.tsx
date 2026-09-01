@@ -283,14 +283,14 @@ export const AdminControlCenter: React.FC = () => {
         }`}
       >
         {/* Brand Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#123333] bg-[#123333]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#61c82d] bg-[#123333]">
           <div className="flex items-center gap-3">
             <div className="grid size-9 place-items-center rounded-xl bg-slate-100 text-[#0f3b6c] border border-[#0f3b6c]/20 shadow-xs">
               <ShieldCheck className="size-5" />
             </div>
             <div>
-              <p className="font-bold text-sm tracking-tight text-[#f5e9e9]">TechnoResolve Control</p>
-              <p className="text-[11px] font-mono font-semibold text-[#f7ebeb] mt-0.5">Administrator</p>
+              <p className="font-bold text-sm tracking-tight bg-[#123333] text-[#f5e9e9] border border-[#103933] px-1.5 py-0.5 rounded">TechnoResolve Control</p>
+              <p className="text-[11px] font-mono font-semibold bg-[#123333] text-[#f7ebeb] border border-[#113737] px-1.5 py-0.5 rounded mt-0.5">Administrator</p>
             </div>
           </div>
           <button
@@ -302,7 +302,7 @@ export const AdminControlCenter: React.FC = () => {
         </div>
 
         {/* Nav Groups */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 bg-[#123333] border-t border-[#123333]">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 bg-[#123333]">
           {navItems.map((group) => (
             <div key={group.group} className="space-y-1">
               <p className="text-[11px] font-bold tracking-wider uppercase text-slate-400 px-3 mb-2">
@@ -395,11 +395,11 @@ export const AdminControlCenter: React.FC = () => {
             <button
               onClick={() => setIsNotificationCenterOpen(true)}
               title="Notifications"
-              className="relative p-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all cursor-pointer"
+              className="relative p-2 rounded-xl border border-slate-200 bg-[#ffffff] text-[#0f3b6c] hover:bg-slate-50 transition-all cursor-pointer"
             >
               <Bell className="size-4" />
               {unreadNotificationsCount > 0 && (
-                <span className="absolute -top-1 -right-1 size-4 rounded-full bg-cyan-500 text-slate-950 text-[10px] font-extrabold grid place-items-center shadow-xs">
+                <span className="absolute -top-1 -right-1 size-4 rounded-full bg-[#ffffff] text-[#0f3b6c] border border-[#ffffff] text-[10px] font-extrabold grid place-items-center shadow-xs">
                   {unreadNotificationsCount}
                 </span>
               )}
@@ -411,14 +411,10 @@ export const AdminControlCenter: React.FC = () => {
             {/* Export report button */}
             <button
               onClick={handleExportCSV}
-              style={{
-                backgroundColor: '#fcfcfc',
-                color: '#0f3b6c',
-              }}
-              className="hidden sm:flex items-center gap-1.5 border border-slate-200 hover:bg-slate-50 text-xs font-semibold px-3.5 py-2 rounded-xl shadow-sm transition-all cursor-pointer"
+              className="hidden sm:flex items-center gap-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-slate-900 text-xs font-semibold px-3.5 py-2 rounded-xl shadow-xs transition-all cursor-pointer"
             >
-              <Download className="size-3.5" style={{ color: '#0f3b6c' }} />
-              <span style={{ color: '#0f3b6c' }}>Export</span>
+              <Download className="size-3.5" />
+              <span>Export</span>
             </button>
           </div>
         </header>

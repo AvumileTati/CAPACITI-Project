@@ -58,17 +58,13 @@ export const RoleSwitcher: React.FC = () => {
             key={r.id}
             id={`role-btn-${r.id}`}
             onClick={() => handleRoleClick(r.id)}
-            style={{
-              backgroundColor: '#ffffff',
-              color: '#0f3b6c',
-            }}
             title={isLocked ? `${r.label} (Locked - Requires higher privileges)` : `Switch to ${r.label}`}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-all cursor-pointer shadow-sm ${
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-all cursor-pointer shadow-sm border ${
               isActive
-                ? (r.id === 'admin' ? 'bg-[#10b981] text-white font-bold' : r.id === 'technician' ? 'bg-[#3b82f6] text-white font-bold' : 'bg-[#f59e0b] text-white font-bold')
+                ? 'bg-[#ffffff] text-[#0f3b6c] border-[#0f3b6c] font-bold'
                 : isLocked
-                ? 'bg-slate-100 text-slate-400 opacity-60 border border-slate-200'
-                : (r.id === 'admin' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : r.id === 'technician' ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100')
+                ? 'bg-slate-100 text-slate-400 opacity-60 border-slate-200'
+                : 'bg-[#ffffff] text-[#0f3b6c] border-[#0f3b6c] hover:bg-slate-50'
             }`}
           >
             {isLocked ? (

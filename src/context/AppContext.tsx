@@ -64,9 +64,10 @@ interface AppContextType {
     description: string;
     company?: string;
     category?: TicketCategory;
+    attachments?: { id: string; name: string; size: number; type: string; url: string; }[];
   }) => Promise<{ ticket: Ticket; aiResult?: any }>;
   updateTicket: (id: string, updates: Partial<Ticket>) => Promise<void>;
-  sendMessage: (ticketId: string, body: string, internal?: boolean) => Promise<void>;
+  sendMessage: (ticketId: string, body: string, internal?: boolean, attachments?: any[]) => Promise<void>;
   updateUserRole: (userId: string, role: UserRole) => Promise<void>;
   updateUserStatus: (
     userId: string,
@@ -369,6 +370,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     description: string;
     company?: string;
     category?: TicketCategory;
+    attachments?: { id: string; name: string; size: number; type: string; url: string; }[];
   }) => {
     setIsAIClassifying(true);
     let aiData: any = null;
@@ -409,6 +411,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const newTicket: Ticket = {
+      attachments: data.attachments || [],
       id: ticketId,
       title: data.title,
       description: data.description,
@@ -530,7 +533,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`Ticket #${id} updated (${updates.status || 'saved'})`, 'info');
   };
 
-  const sendMessage = async (ticketId: string, body: string, internal: boolean = false) => {
+  const sendMessage = async (ticketId: string, body: string, internal: boolean = false, attachments: any[] = []) => {
     const newMsg: TicketMessage = {
       id: `msg-${Date.now()}`,
       ticket_id: ticketId,
@@ -540,6 +543,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       body,
       internal,
       created_at: new Date().toISOString(),
+      attachments,
     };
 
     setMessages((prev) => [...prev, newMsg]);
