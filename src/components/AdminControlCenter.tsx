@@ -395,13 +395,9 @@ export const AdminControlCenter: React.FC = () => {
             <button
               onClick={() => setIsNotificationCenterOpen(true)}
               title="Notifications"
-              style={{
-                backgroundColor: '#ffffff',
-                color: '#0f3b6c',
-              }}
-              className="relative p-2 rounded-xl border border-slate-200 text-[#0f3b6c] hover:bg-slate-50 transition-all cursor-pointer shadow-sm"
+              className="relative p-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all cursor-pointer"
             >
-              <Bell className="size-4" style={{ color: '#0f3b6c' }} />
+              <Bell className="size-4" />
               {unreadNotificationsCount > 0 && (
                 <span className="absolute -top-1 -right-1 size-4 rounded-full bg-cyan-500 text-slate-950 text-[10px] font-extrabold grid place-items-center shadow-xs">
                   {unreadNotificationsCount}
