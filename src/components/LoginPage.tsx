@@ -149,17 +149,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
       <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Header with brand & back button */}
-      <header className="relative z-10 max-w-6xl mx-auto w-full px-6 py-6 flex items-center justify-between bg-[#5088c3] text-white shadow-md">
+      <header className="relative z-10 max-w-6xl mx-auto w-full px-6 py-6 flex items-center justify-between bg-transparent">
         <div className="flex items-center gap-3">
-          <div className="size-9 rounded-xl bg-slate-100 text-[#0f3b6c] border border-[#0f3b6c]/20 flex items-center justify-center shadow-xs">
+          <div className="size-9 rounded-xl bg-slate-100 text-[#0f3b6c] border border-slate-200 flex items-center justify-center shadow-xs">
             <Layers className="size-5" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-[#ffffff] tracking-tight">TechnoResolve Desk</h1>
-            <p className="text-[11px] text-white/80 font-mono">Enterprise Cloud Service</p>
+            <h1 className="text-base font-bold text-slate-900 tracking-tight">TechnoResolve Desk</h1>
+            <p className="text-[11px] text-slate-500 font-mono">Enterprise Cloud Service</p>
           </div>
         </div>
-
         {onBackToLanding && (
           <button
             onClick={onBackToLanding}
@@ -177,7 +176,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-md p-6 sm:p-8 shadow-2xl space-y-6"
+          className="rounded-3xl border border-white/60 bg-white/30 backdrop-blur-xl p-6 sm:p-8 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.1)] space-y-6 backdrop-saturate-150"
         >
           {/* First User Notice Banner */}
           {isSystemEmpty && (
