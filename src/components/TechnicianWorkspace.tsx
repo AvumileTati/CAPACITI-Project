@@ -28,6 +28,9 @@ export const TechnicianWorkspace: React.FC = () => {
 
   const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'new' | 'in_progress' | 'escalated' | 'resolved' | 'dashboard' | 'reports'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
@@ -62,6 +65,8 @@ export const TechnicianWorkspace: React.FC = () => {
       }
 
       if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
+      if (priorityFilter !== 'all' && t.priority !== priorityFilter) return false;
+      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -74,7 +79,7 @@ export const TechnicianWorkspace: React.FC = () => {
       }
       return true;
     });
-  }, [tickets, filterMode, categoryFilter, searchQuery, currentUser]);
+  }, [tickets, filterMode, categoryFilter, priorityFilter, statusFilter, searchQuery, currentUser]);
 
   useEffect(() => {
     if (!selectedTicketId || !filteredTickets.some((t) => t.id === selectedTicketId)) {
@@ -255,21 +260,74 @@ export const TechnicianWorkspace: React.FC = () => {
                     className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
                   />
                 </div>
-                <button className="p-2 border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50">
+                <button 
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`p-2 border rounded-lg transition-colors ${showFilters ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
                    <SlidersHorizontal className="size-3.5" />
                 </button>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Category</label>
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full p-2 rounded-lg border border-slate-200 text-sm focus:border-blue-500 outline-none bg-white"
-                >
-                  <option value="all">Category</option>
-                  {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                </select>
-              </div>
+              
+              {showFilters && (
+                <div className="pt-2 space-y-3 border-t border-slate-100 mt-2">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">Category</label>
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full p-2 rounded-lg border border-slate-200 text-xs focus:border-blue-500 outline-none bg-white"
+                    >
+                      <option value="all">All Categories</option>
+                      {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Priority</label>
+                      <select
+                        value={priorityFilter}
+                        onChange={(e) => setPriorityFilter(e.target.value)}
+                        className="w-full p-2 rounded-lg border border-slate-200 text-xs focus:border-blue-500 outline-none bg-white"
+                      >
+                        <option value="all">All</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Status</label>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full p-2 rounded-lg border border-slate-200 text-xs focus:border-blue-500 outline-none bg-white"
+                      >
+                        <option value="all">All</option>
+                        <option value="new">New</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="pending_user">Pending</option>
+                        <option value="escalated">Escalated</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {(categoryFilter !== 'all' || priorityFilter !== 'all' || statusFilter !== 'all') && (
+                    <button 
+                      onClick={() => {
+                        setCategoryFilter('all');
+                        setPriorityFilter('all');
+                        setStatusFilter('all');
+                      }}
+                      className="text-[10px] font-bold text-slate-400 hover:text-slate-600 w-full text-right"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* List */}
