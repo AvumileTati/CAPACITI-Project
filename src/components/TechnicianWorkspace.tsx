@@ -9,6 +9,7 @@ import {
   RefreshCw, CheckCircle2
 } from 'lucide-react';
 import { RoleSwitcher } from './RoleSwitcher';
+import { AssignAgentModal } from './AssignAgentModal';
 
 export const TechnicianWorkspace: React.FC = () => {
   const {
@@ -35,6 +36,7 @@ export const TechnicianWorkspace: React.FC = () => {
   const [isInternal, setIsInternal] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -167,15 +169,18 @@ export const TechnicianWorkspace: React.FC = () => {
     return <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-bold">New</span>;
   };
 
+  const myTicketsCount = tickets.filter(t => t.assigned_to === currentUser?.id || t.assigned_name?.toLowerCase().includes('marcus') || (currentUser?.full_name && t.assigned_name === currentUser.full_name)).length;
+  const teamQueueCount = tickets.length;
+
   return (
     <div className="flex h-screen w-full bg-white text-slate-900 overflow-hidden font-sans">
       
       {/* 1. LEFT SIDEBAR */}
-      <aside className="w-[240px] border-r border-slate-200 flex flex-col bg-slate-50 shrink-0">
+      <aside className="w-[200px] border-r border-slate-200 flex flex-col bg-slate-50 shrink-0">
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 gap-3 shrink-0">
+        <div className="h-12 flex items-center px-4 gap-3 shrink-0">
           <div className="flex items-center gap-1.5">
-             <span className="text-2xl font-black text-blue-600">T</span>
+             <span className="text-lg font-black text-blue-600">T</span>
              <div className="leading-tight">
                <h1 className="font-bold text-sm text-slate-800">Technician</h1>
                <h1 className="font-bold text-sm text-slate-800">Cockpit</h1>
@@ -184,23 +189,19 @@ export const TechnicianWorkspace: React.FC = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1">
+        <nav className="flex-1 px-4 py-4 space-y-1">
 
-          <button onClick={() => setFilterMode('mine')} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors ${filterMode === 'mine' ? 'bg-blue-100/50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>
-            <div className="flex items-center gap-3"><TicketIcon className="size-4" /> My Tickets</div>
-            <span className="bg-rose-100 text-rose-600 text-[10px] font-bold px-2 py-0.5 rounded-full">5</span>
+          <button onClick={() => setFilterMode('mine')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'mine' ? 'bg-blue-100/50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>
+            <div className="flex items-center gap-3"><TicketIcon className="size-3.5" /> My Tickets</div>
+            {myTicketsCount > 0 && <span className="bg-rose-100 text-rose-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{myTicketsCount}</span>}
           </button>
           
-          <button onClick={() => setFilterMode('all')} className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors ${filterMode === 'all' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>
-            <div className="flex items-center gap-3"><List className="size-4" /> Team Queue</div>
-            <span className="bg-blue-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">2</span>
+          <button onClick={() => setFilterMode('all')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'all' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>
+            <div className="flex items-center gap-3"><List className="size-3.5" /> Team Queue</div>
+            {teamQueueCount > 0 && <span className="bg-blue-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{teamQueueCount}</span>}
           </button>
 
 
-          <button className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
-            <div className="flex items-center gap-3"><Settings className="size-4" /> Settings</div>
-            <span className="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full">2</span>
-          </button>
         </nav>
       </aside>
 
@@ -208,9 +209,11 @@ export const TechnicianWorkspace: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* Top Navbar */}
-        <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-end px-6 gap-4 shrink-0">
+        <header className="h-12 border-b border-slate-200 bg-white flex items-center justify-end px-4 gap-4 shrink-0">
+          <RoleSwitcher />
+          
           <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-full py-1.5 px-3">
-             <div className="size-7 rounded-full bg-slate-300 flex items-center justify-center text-xs font-bold text-slate-700 uppercase">
+             <div className="size-6 rounded-full text-[10px] bg-slate-300 flex items-center justify-center text-xs font-bold text-slate-700 uppercase">
                 {currentUser?.full_name?.charAt(0) || 'A'}
              </div>
              <div className="leading-tight pr-2 text-left">
@@ -220,7 +223,7 @@ export const TechnicianWorkspace: React.FC = () => {
                  <span className="size-1.5 rounded-full bg-emerald-500"></span>
                </div>
              </div>
-             <Settings className="size-4 text-slate-500 cursor-pointer hover:text-slate-700" />
+             <Settings className="size-3.5 text-slate-500 cursor-pointer hover:text-slate-700" />
           </div>
           
           <button onClick={() => setIsNotificationCenterOpen(true)} className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
@@ -229,7 +232,7 @@ export const TechnicianWorkspace: React.FC = () => {
           </button>
 
           <button onClick={signOut} className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
-            <LogOut className="size-4" /> Sign Out
+            <LogOut className="size-3.5" /> Sign Out
           </button>
         </header>
 
@@ -237,13 +240,13 @@ export const TechnicianWorkspace: React.FC = () => {
         <div className="flex-1 flex overflow-hidden">
           
           {/* Middle Column: Ticket List */}
-          <div className="w-[320px] border-r border-slate-200 flex flex-col bg-white shrink-0">
+          <div className="w-[280px] border-r border-slate-200 flex flex-col bg-white shrink-0">
             {/* Search/Filter Header */}
-            <div className="p-4 border-b border-slate-200 space-y-3 shrink-0">
+            <div className="p-3 border-b border-slate-200 space-y-3 shrink-0">
               <h2 className="font-bold text-sm text-slate-800">Search / Filter</h2>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={searchQuery}
@@ -253,7 +256,7 @@ export const TechnicianWorkspace: React.FC = () => {
                   />
                 </div>
                 <button className="p-2 border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50">
-                   <SlidersHorizontal className="size-4" />
+                   <SlidersHorizontal className="size-3.5" />
                 </button>
               </div>
               <div className="space-y-1.5">
@@ -277,14 +280,14 @@ export const TechnicianWorkspace: React.FC = () => {
                   <div
                     key={ticket.id}
                     onClick={() => setSelectedTicketId(ticket.id)}
-                    className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                    className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
                       isSelected 
                         ? 'border-blue-300 bg-blue-50 shadow-sm' 
                         : 'border-slate-200 bg-white hover:border-blue-200'
                     }`}
                   >
                     <div className="flex gap-3">
-                      <div className="size-8 rounded-full bg-slate-200 shrink-0 overflow-hidden flex items-center justify-center font-bold text-slate-500 text-xs">
+                      <div className="size-6 rounded-full text-[10px] bg-slate-200 shrink-0 overflow-hidden flex items-center justify-center font-bold text-slate-500 text-xs">
                          {ticket.requester_name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0 space-y-1">
@@ -303,7 +306,7 @@ export const TechnicianWorkspace: React.FC = () => {
                 );
               })}
               {filteredTickets.length === 0 && (
-                <div className="text-center p-6 text-sm text-slate-500">No tickets found</div>
+                <div className="text-center p-4 text-sm text-slate-500">No tickets found</div>
               )}
             </div>
           </div>
@@ -313,27 +316,27 @@ export const TechnicianWorkspace: React.FC = () => {
             {activeTicket ? (
               <>
                 {/* Details Header */}
-                <div className="p-6 border-b border-slate-200 shrink-0 space-y-4">
+                <div className="p-3 border-b border-slate-200 shrink-0 space-y-4">
                   {/* Title */}
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">{activeTicket.title}</h2>
-                    <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200">
+                    <h2 className="text-lg font-bold text-slate-900 tracking-tight">{activeTicket.title}</h2>
+                    <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-bold border border-emerald-200">
                       {formatStatus(activeTicket.status)}
                     </span>
                   </div>
 
                   {/* 3 Data Columns */}
-                  <div className="grid grid-cols-3 gap-6 pt-2">
+                  <div className="grid grid-cols-3 gap-4 pt-2">
                     <div className="space-y-2">
-                      <div className="flex items-center gap-1.5 text-slate-500 text-sm font-semibold">
-                         <User className="size-4" /> Requester
+                      <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
+                         <User className="size-3.5" /> Requester
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 uppercase">
+                        <div className="size-6 rounded-full text-[10px] bg-slate-200 flex items-center justify-center font-bold text-slate-600 uppercase">
                           {activeTicket.requester_name.charAt(0)}
                         </div>
                         <div className="leading-tight">
-                          <p className="font-bold text-sm text-slate-900">{activeTicket.requester_name}</p>
+                          <p className="font-bold text-xs text-slate-900">{activeTicket.requester_name}</p>
                           <div className="flex items-center gap-1 text-xs text-slate-500">
                             {activeTicket.requester_email} <Copy className="size-3 cursor-pointer hover:text-slate-800" />
                           </div>
@@ -342,23 +345,23 @@ export const TechnicianWorkspace: React.FC = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <div className="flex items-center gap-1.5 text-slate-500 text-sm font-semibold">
-                         <UserCheck className="size-4" /> Assignee
+                      <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
+                         <UserCheck className="size-3.5" /> Assignee
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600 uppercase">
+                        <div className="size-6 rounded-full text-[10px] bg-slate-200 flex items-center justify-center font-bold text-slate-600 uppercase">
                            {activeTicket.assigned_name ? activeTicket.assigned_name.charAt(0) : '?'}
                         </div>
                         <div className="leading-tight">
-                          <p className="font-bold text-sm text-slate-900">{activeTicket.assigned_name || 'Unassigned'}</p>
-                          <button onClick={handleAssignToMe} className="text-xs text-blue-600 font-bold hover:underline">Assign Agent</button>
+                          <p className="font-bold text-xs text-slate-900">{activeTicket.assigned_name || 'Unassigned'}</p>
+                          <button onClick={() => setIsAssignModalOpen(true)} className="text-xs text-blue-600 font-bold hover:underline">Assign Agent</button>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-1 text-sm border-l border-slate-200 pl-6">
+                    <div className="space-y-1 text-xs border-l border-slate-200 pl-6">
                        <div className="flex items-center gap-1.5 text-slate-500 font-semibold mb-2">
-                         <TicketIcon className="size-4" /> Ticket Info
+                         <TicketIcon className="size-3.5" /> Ticket Info
                        </div>
                        <p className="flex justify-between"><span className="text-slate-500">Category:</span> <span className="font-medium text-slate-900 capitalize">{activeTicket.category}</span></p>
                        <p className="flex justify-between"><span className="text-slate-500">Created Date:</span> <span className="font-medium text-slate-900">{new Date(activeTicket.created_at).toLocaleDateString()}</span></p>
@@ -368,15 +371,15 @@ export const TechnicianWorkspace: React.FC = () => {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex items-center justify-between px-6 border-b border-slate-200 shrink-0">
-                  <div className="flex items-center gap-6">
-                    <button onClick={() => setInspectorTab('discussion')} className={`py-4 text-sm font-bold border-b-2 transition-colors ${inspectorTab === 'discussion' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+                <div className="flex items-center justify-between px-4 border-b border-slate-200 shrink-0">
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => setInspectorTab('discussion')} className={`py-3 text-xs font-bold border-b-2 transition-colors ${inspectorTab === 'discussion' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
                       Activity Feed
                     </button>
-                    <button onClick={() => setInspectorTab('ai_intel')} className={`py-4 text-sm font-bold border-b-2 transition-colors ${inspectorTab === 'ai_intel' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+                    <button onClick={() => setInspectorTab('ai_intel')} className={`py-3 text-xs font-bold border-b-2 transition-colors ${inspectorTab === 'ai_intel' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
                       AI Insights (91%)
                     </button>
-                    <button onClick={() => setInspectorTab('requester')} className={`py-4 text-sm font-bold border-b-2 transition-colors ${inspectorTab === 'requester' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+                    <button onClick={() => setInspectorTab('requester')} className={`py-3 text-xs font-bold border-b-2 transition-colors ${inspectorTab === 'requester' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
                       Requester Profile
                     </button>
                   </div>
@@ -384,7 +387,7 @@ export const TechnicianWorkspace: React.FC = () => {
                   <select 
                     value={activeTicket.status}
                     onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
-                    className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 outline-none bg-white"
+                    className="border border-slate-200 rounded-lg px-2 py-1 text-xs font-medium text-slate-700 outline-none bg-white"
                   >
                     <option value="new">Status: New</option>
                     <option value="in_progress">Status: In Progress</option>
@@ -399,19 +402,19 @@ export const TechnicianWorkspace: React.FC = () => {
                     
                     {/* Chat Area & Floating Actions */}
                     <div className="flex-1 flex overflow-hidden">
-                      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
                          
                          {/* Customer Original */}
-                         <div className="flex gap-4">
-                           <div className="size-10 rounded-full bg-slate-300 shrink-0 flex items-center justify-center font-bold text-slate-600">
+                         <div className="flex gap-3">
+                           <div className="size-6 rounded-full text-[10px] bg-slate-300 text-xs shrink-0 flex items-center justify-center font-bold text-slate-600">
                              {activeTicket.requester_name.charAt(0)}
                            </div>
                            <div className="max-w-[75%] space-y-1">
                              <div className="flex items-center gap-2">
-                               <span className="font-bold text-sm text-slate-900">{activeTicket.requester_name}</span>
+                               <span className="font-bold text-xs text-slate-900">{activeTicket.requester_name}</span>
                                <span className="text-xs text-slate-400">· {new Date(activeTicket.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                              </div>
-                             <div className="bg-slate-200/70 text-slate-900 p-4 rounded-2xl rounded-tl-sm text-sm whitespace-pre-wrap leading-relaxed shadow-sm">
+                             <div className="bg-slate-200/70 text-slate-900 p-2.5 rounded-lg rounded-tl-sm text-xs whitespace-pre-wrap leading-relaxed shadow-sm">
                                {activeTicket.description}
                                <div className="mt-3">
                                  <span className="bg-slate-300 text-slate-700 text-[10px] font-bold uppercase px-2 py-1 rounded-md">Original Report</span>
@@ -428,8 +431,8 @@ export const TechnicianWorkspace: React.FC = () => {
                            if (isNote) {
                              return (
                                <div key={msg.id} className="flex justify-center my-4">
-                                  <div className="flex items-start gap-2 max-w-lg bg-amber-50 border border-amber-200 p-3 rounded-xl text-sm text-amber-900 shadow-sm">
-                                     <Lock className="size-4 shrink-0 text-amber-500 mt-0.5" />
+                                  <div className="flex items-start gap-2 max-w-lg bg-amber-50 border border-amber-200 p-2.5 rounded-lg text-sm text-amber-900 shadow-sm">
+                                     <Lock className="size-3.5 shrink-0 text-amber-500 mt-0.5" />
                                      <div>
                                         <p className="font-bold text-xs text-amber-700 mb-1">{msg.author_name} (Internal Note)</p>
                                         <p>{msg.body}</p>
@@ -440,16 +443,16 @@ export const TechnicianWorkspace: React.FC = () => {
                            }
 
                            return (
-                             <div key={msg.id} className={`flex gap-4 ${isMe ? 'flex-row-reverse' : ''}`}>
-                               <div className="size-10 rounded-full bg-slate-300 shrink-0 flex items-center justify-center font-bold text-slate-600">
+                             <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
+                               <div className="size-6 rounded-full text-[10px] bg-slate-300 text-xs shrink-0 flex items-center justify-center font-bold text-slate-600">
                                  {msg.author_name.charAt(0)}
                                </div>
                                <div className={`max-w-[75%] space-y-1 ${isMe ? 'text-right' : ''}`}>
                                  <div className={`flex items-center gap-2 ${isMe ? 'justify-end' : ''}`}>
-                                   <span className="font-bold text-sm text-slate-900">{msg.author_name}</span>
+                                   <span className="font-bold text-xs text-slate-900">{msg.author_name}</span>
                                    <span className="text-xs text-slate-400">· {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                  </div>
-                                 <div className={`p-4 rounded-2xl text-sm whitespace-pre-wrap leading-relaxed shadow-sm text-left ${isMe ? 'bg-blue-200 text-blue-900 rounded-tr-sm' : 'bg-slate-200/70 text-slate-900 rounded-tl-sm'}`}>
+                                 <div className={`p-2.5 rounded-lg text-xs whitespace-pre-wrap leading-relaxed shadow-sm text-left ${isMe ? 'bg-blue-200 text-blue-900 rounded-tr-sm' : 'bg-slate-200/70 text-slate-900 rounded-tl-sm'}`}>
                                    {msg.body}
                                  </div>
                                </div>
@@ -460,29 +463,29 @@ export const TechnicianWorkspace: React.FC = () => {
                       </div>
 
                       {/* Right Action Column */}
-                      <div className="w-24 border-l border-slate-200 bg-white p-3 flex flex-col gap-3 shrink-0 items-center overflow-y-auto">
-                        <button onClick={handleAssignToMe} className="w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-700 hover:text-slate-900">
-                           <UserPlus className="size-5" />
-                           <span className="text-[10px] font-bold text-center leading-tight">Assign<br/>Agent</span>
+                      <div className="w-16 border-l border-slate-200 bg-white p-2 flex flex-col gap-2 shrink-0 items-center overflow-y-auto">
+                        <button onClick={() => setIsAssignModalOpen(true)} className="w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-700 hover:text-slate-900">
+                           <UserPlus className="size-3.5" />
+                           <span className="text-[9px] font-bold text-center leading-tight">Assign<br/>Agent</span>
                         </button>
                         <button onClick={handleAssignToMe} className="w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-700 hover:text-slate-900">
-                           <UserCheck className="size-5" />
-                           <span className="text-[10px] font-bold text-center leading-tight">Take<br/>Ticket</span>
+                           <UserCheck className="size-3.5" />
+                           <span className="text-[9px] font-bold text-center leading-tight">Take<br/>Ticket</span>
                         </button>
                         <button onClick={handleEscalate} className="w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-700 hover:text-slate-900">
-                           <ArrowUpRight className="size-5" />
-                           <span className="text-[10px] font-bold text-center leading-tight">Escalate</span>
+                           <ArrowUpRight className="size-3.5" />
+                           <span className="text-[9px] font-bold text-center leading-tight">Escalate</span>
                         </button>
                         <button onClick={handleResolve} className="w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-700 hover:text-slate-900">
-                           <CheckCircle className="size-5" />
-                           <span className="text-[10px] font-bold text-center leading-tight">Resolve</span>
+                           <CheckCircle className="size-3.5" />
+                           <span className="text-[9px] font-bold text-center leading-tight">Resolve</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Bottom Composer */}
                     <div className="bg-white border-t border-slate-200 p-4 shrink-0 space-y-3">
-                       <div className="flex items-center gap-4 border-b border-slate-200 pb-2">
+                       <div className="flex items-center gap-3 border-b border-slate-200 pb-2">
                          <button onClick={() => setIsInternal(false)} className={`text-sm font-bold pb-2 -mb-[9px] border-b-2 transition-colors ${!isInternal ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500'}`}>
                            Customer Reply
                          </button>
@@ -509,7 +512,7 @@ export const TechnicianWorkspace: React.FC = () => {
                            onChange={e => setReplyText(e.target.value)}
                            placeholder="Type your reply..."
                            rows={3}
-                           className="w-full resize-none p-3 pb-12 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-sm outline-none focus:border-blue-500 transition-colors"
+                           className="w-full resize-none p-2 pb-10 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs outline-none focus:border-blue-500 transition-colors"
                            onKeyDown={e => {
                              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                                handleSendReply(e);
@@ -519,7 +522,7 @@ export const TechnicianWorkspace: React.FC = () => {
                          <button
                            type="submit"
                            disabled={!replyText.trim()}
-                           className="absolute bottom-3 right-3 bg-[#4c7db7] hover:bg-[#3b608f] text-white px-5 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                           className="absolute bottom-3 right-3 bg-[#4c7db7] hover:bg-[#3b608f] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
                          >
                            Send Message
                          </button>
@@ -530,14 +533,14 @@ export const TechnicianWorkspace: React.FC = () => {
                 )}
                 
                 {inspectorTab === 'ai_intel' && (
-                  <div className="flex-1 p-8 text-slate-500 flex flex-col items-center justify-center">
+                  <div className="flex-1 p-6 text-slate-500 flex flex-col items-center justify-center">
                     <Cpu className="size-12 mb-4 text-blue-500" />
                     <p className="font-bold">AI Triage Data</p>
                     <p className="text-sm">Confidence: {activeTicket.ai_confidence ? Math.round(activeTicket.ai_confidence * 100) : 91}%</p>
                   </div>
                 )}
                 {inspectorTab === 'requester' && (
-                  <div className="flex-1 p-8 text-slate-500 flex flex-col items-center justify-center">
+                  <div className="flex-1 p-6 text-slate-500 flex flex-col items-center justify-center">
                     <User className="size-12 mb-4 text-blue-500" />
                     <p className="font-bold">{activeTicket.requester_name}</p>
                     <p className="text-sm">{activeTicket.requester_email}</p>
@@ -545,7 +548,7 @@ export const TechnicianWorkspace: React.FC = () => {
                 )}
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-slate-400">
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-slate-400">
                  <TicketIcon className="size-16 mb-4 opacity-50" />
                  <p className="font-bold text-lg">No Ticket Selected</p>
                  <p className="text-sm">Select a ticket from the queue to view details.</p>
@@ -554,6 +557,13 @@ export const TechnicianWorkspace: React.FC = () => {
           </div>
         </div>
       </div>
+      {activeTicket && (
+        <AssignAgentModal
+          isOpen={isAssignModalOpen}
+          onClose={() => setIsAssignModalOpen(false)}
+          ticket={activeTicket}
+        />
+      )}
     </div>
   );
 };
