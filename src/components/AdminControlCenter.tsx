@@ -277,14 +277,14 @@ export const AdminControlCenter: React.FC = () => {
         }`}
       >
         {/* Brand Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-[#151617]">
           <div className="flex items-center gap-3">
             <div className="grid size-9 place-items-center rounded-xl bg-slate-100 text-[#0f3b6c] border border-[#0f3b6c]/20 shadow-xs">
               <ShieldCheck className="size-5" />
             </div>
             <div>
-              <p className="font-bold text-sm text-slate-900 tracking-tight">TechnoResolve Control</p>
-              <p className="text-[11px] text-[#0f3b6c] font-mono font-semibold">Administrator</p>
+              <p className="font-bold text-sm tracking-tight bg-[#100f0f] text-[#1c0808]">TechnoResolve Control</p>
+              <p className="text-[11px] font-mono font-semibold text-[#110202]">Administrator</p>
             </div>
           </div>
           <button
@@ -370,7 +370,7 @@ export const AdminControlCenter: React.FC = () => {
       {/* Main Workspace View */}
       <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-[#0f3b6c] text-white shadow-md">
+        <header className="sticky top-0 z-30 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-[#487aea] text-white shadow-md">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
@@ -380,7 +380,7 @@ export const AdminControlCenter: React.FC = () => {
             </button>
             <div>
               <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">System Control Center</h1>
-              <p className="text-xs text-slate-500 font-mono hidden sm:block">{currentUser?.email}</p>
+              <p className="text-xs font-mono hidden sm:block border-[#171919] text-[#121111]">{currentUser?.email}</p>
             </div>
           </div>
 

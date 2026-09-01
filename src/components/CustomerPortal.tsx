@@ -3,6 +3,8 @@ import { useApp } from '../context/AppContext';
 import { TicketCategory, Ticket } from '../types';
 import { CATEGORIES, FAQ_ITEMS, getCategoryLabel, formatStatus } from '../data/seedData';
 import {
+  Home,
+  Ticket as TicketIcon,
   Plus,
   Search,
   MessageSquare,
@@ -94,45 +96,40 @@ export const CustomerPortal: React.FC = () => {
   return (
     <div id="customer-portal" className="min-h-screen bg-[#edf5fd] text-slate-900 flex flex-col font-sans">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-[#0f3b6c] text-white shadow-md">
-        <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-30 border-b border-slate-700/50 bg-[#0f3b6c] text-white shadow-md">
+        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           {/* Logo & Brand */}
           <div className="flex items-center gap-3">
-            <div className="grid size-8 place-items-center rounded-lg bg-blue-600 text-slate-900 shadow-xs">
+            <div className="grid size-9 place-items-center rounded-lg bg-blue-500 text-white shadow-sm ring-1 ring-white/20">
               <Bot className="size-5" />
             </div>
-            <span className="font-bold text-slate-900 text-base tracking-tight">
+            <span className="font-bold text-white text-base tracking-tight">
               TechnoResolve Desk
             </span>
           </div>
 
-          {/* Center Navigation Tabs */}
-          <nav className="hidden md:flex items-center gap-1.5">
+          {/* Center Navigation Tabs with High-Visibility Icons */}
+          <nav className="hidden md:flex items-center gap-1.5 bg-black/20 p-1 rounded-full border border-white/10">
             {[
-              { id: 'home', label: 'Home' },
-              { id: 'tickets', label: 'My Tickets' },
-              { id: 'account', label: 'Account' },
-              { id: 'help', label: 'Help Centre' },
+              { id: 'home', label: 'Home', icon: Home },
+              { id: 'tickets', label: `My Tickets${myTickets.length > 0 ? ` (${myTickets.length})` : ''}`, icon: TicketIcon },
+              { id: 'account', label: 'Account', icon: UserIcon },
+              { id: 'help', label: 'Help Centre', icon: HelpCircle },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
+              const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`relative px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-150 ${
+                  className={`relative flex items-center gap-2 px-4 py-1.5 text-xs font-semibold rounded-full transition-all duration-150 cursor-pointer ${
                     isActive
-                      ? 'bg-white/20 text-white font-bold'
-                      : 'text-slate-300 hover:text-white hover:bg-white/10'
+                      ? 'bg-white text-[#0f3b6c] font-bold shadow-md'
+                      : 'text-slate-200 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  {tab.label}
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeTabBadge"
-                      className="absolute inset-0 bg-sky-100 rounded-full -z-10"
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    />
-                  )}
+                  <Icon className={`size-4 ${isActive ? 'text-[#0f3b6c] stroke-[2.5]' : 'text-slate-300 stroke-[2]'}`} />
+                  <span>{tab.label}</span>
                 </button>
               );
             })}
@@ -144,11 +141,11 @@ export const CustomerPortal: React.FC = () => {
             <button
               onClick={() => setIsNotificationCenterOpen(true)}
               title="Notifications"
-              className="relative p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              className="relative p-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
             >
-              <Bell className="size-4" />
+              <Bell className="size-4.5" />
               {unreadNotificationsCount > 0 && (
-                <span className="absolute top-0 right-0 size-4 rounded-full bg-[#4caf50] text-white text-[10px] font-extrabold grid place-items-center shadow-xs">
+                <span className="absolute top-0.5 right-0.5 size-4 rounded-full bg-[#22c55e] text-white text-[10px] font-extrabold grid place-items-center shadow-xs ring-2 ring-[#0f3b6c]">
                   {unreadNotificationsCount}
                 </span>
               )}
@@ -160,7 +157,7 @@ export const CustomerPortal: React.FC = () => {
             {/* Sign Out Button */}
             <button
               onClick={signOut}
-              className="flex items-center gap-1 text-slate-300 hover:text-rose-300 text-xs font-semibold px-2 py-1 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-slate-200 hover:text-rose-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
             >
               <span className="hidden sm:inline">Sign out</span>
               <LogOut className="size-3.5" />
@@ -169,23 +166,30 @@ export const CustomerPortal: React.FC = () => {
         </div>
 
         {/* Mobile Navigation Row */}
-        <div className="md:hidden flex items-center justify-around border-t border-slate-100 px-3 py-2 text-xs">
+        <div className="md:hidden flex items-center justify-around border-t border-white/10 bg-[#0c2f56] px-3 py-2 text-xs">
           {[
-            { id: 'home', label: 'Home' },
-            { id: 'tickets', label: `Tickets (${myTickets.length})` },
-            { id: 'account', label: 'Account' },
-            { id: 'help', label: 'Help' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-3 py-1 font-semibold rounded-full ${
-                activeTab === tab.id ? 'bg-sky-100 text-sky-800' : 'text-slate-600'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+            { id: 'home', label: 'Home', icon: Home },
+            { id: 'tickets', label: `Tickets (${myTickets.length})`, icon: TicketIcon },
+            { id: 'account', label: 'Account', icon: UserIcon },
+            { id: 'help', label: 'Help', icon: HelpCircle },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 font-semibold rounded-full transition-all ${
+                  isActive
+                    ? 'bg-white text-[#0f3b6c] font-bold shadow-xs'
+                    : 'text-slate-200 hover:bg-white/10'
+                }`}
+              >
+                <Icon className={`size-3.5 ${isActive ? 'text-[#0f3b6c]' : 'text-slate-300'}`} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -235,7 +239,7 @@ export const CustomerPortal: React.FC = () => {
                   }}
                   className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-blue-400 hover:shadow-md transition-all group text-left cursor-pointer"
                 >
-                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-slate-900 transition-colors">
+                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     <Laptop className="size-5" />
                   </div>
                   <div>
@@ -250,7 +254,7 @@ export const CustomerPortal: React.FC = () => {
                   }}
                   className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-purple-400 hover:shadow-md transition-all group text-left cursor-pointer"
                 >
-                  <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl group-hover:bg-purple-600 group-hover:text-slate-900 transition-colors">
+                  <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition-colors">
                     <Wifi className="size-5" />
                   </div>
                   <div>
@@ -265,7 +269,7 @@ export const CustomerPortal: React.FC = () => {
                   }}
                   className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-amber-400 hover:shadow-md transition-all group text-left cursor-pointer"
                 >
-                  <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-600 group-hover:text-slate-900 transition-colors">
+                  <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-colors">
                     <KeyRound className="size-5" />
                   </div>
                   <div>
@@ -280,7 +284,7 @@ export const CustomerPortal: React.FC = () => {
                   }}
                   className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-emerald-400 hover:shadow-md transition-all group text-left cursor-pointer"
                 >
-                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-slate-900 transition-colors">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                     <CreditCard className="size-5" />
                   </div>
                   <div>
@@ -297,24 +301,24 @@ export const CustomerPortal: React.FC = () => {
                     setPreselectedCategory(undefined);
                     setIsNewTicketOpen(true);
                   }}
-                  className="sm:col-span-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-slate-900 rounded-2xl p-5 flex flex-col justify-center items-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                  className="sm:col-span-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-2xl p-5 flex flex-col justify-center items-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                 >
-                  <Plus className="size-6 stroke-[2.5] group-hover:scale-110 transition-transform" />
-                  <span className="font-bold text-sm">Other Request</span>
+                  <Plus className="size-6 stroke-[2.5] text-white group-hover:scale-110 transition-transform" />
+                  <span className="font-bold text-sm text-white">Other Request</span>
                 </button>
                 
-                <div className="sm:col-span-3 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-slate-900 flex items-center justify-between relative overflow-hidden">
+                <div className="sm:col-span-3 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white flex items-center justify-between relative overflow-hidden shadow-sm">
                   <div className="absolute right-0 top-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
                   <div className="absolute left-0 bottom-0 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl -ml-5 -mb-5"></div>
                   <div className="relative z-10 space-y-1">
-                    <h3 className="font-bold flex items-center gap-2">
+                    <h3 className="font-bold text-white flex items-center gap-2">
                       <Sparkles className="size-4 text-blue-400" /> AI Triage Active
                     </h3>
-                    <p className="text-xs text-slate-700 leading-relaxed max-w-[200px] sm:max-w-[250px]">
+                    <p className="text-xs text-slate-300 leading-relaxed max-w-[200px] sm:max-w-[250px]">
                       Your requests are instantly analyzed and routed by Gemini to the fastest available agent.
                     </p>
                   </div>
-                  <div className="relative z-10 shrink-0 opacity-20 sm:opacity-50">
+                  <div className="relative z-10 shrink-0 text-white/40">
                     <Bot className="size-12 sm:size-16" />
                   </div>
                 </div>
@@ -391,7 +395,7 @@ export const CustomerPortal: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setIsNewTicketOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-slate-900 hover:bg-blue-700 shadow-xs"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 shadow-xs cursor-pointer"
                 >
                   <Plus className="size-4" />
                   <span>New Request</span>
