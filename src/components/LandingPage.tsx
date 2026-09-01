@@ -1,70 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Bot,
   ArrowRight,
   ShieldCheck,
-  Workflow,
   LifeBuoy,
   Sparkles,
   CheckCircle2,
   Lock,
   Layers,
-  Activity,
   Zap,
+  Clock,
+  BarChart3,
+  MessageSquare,
+  SlidersHorizontal,
+  FileText,
+  PlusCircle,
+  TrendingDown,
+  Eye,
+  Check,
 } from 'lucide-react';
-import { RoleSwitcher } from './RoleSwitcher';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 
 export const LandingPage: React.FC<{
   onOpenAuth: () => void;
   onOpenNewTicket: () => void;
 }> = ({ onOpenAuth, onOpenNewTicket }) => {
   const { tickets } = useApp();
-  
-  const triageItems = tickets.slice(0, 4).map(t => {
-    let color = 'text-blue-600';
-    let bg = 'bg-blue-100';
-    let dot = 'bg-blue-600';
-    
-    if (t.priority === 'urgent') { color = 'text-red-600'; bg = 'bg-red-100'; dot = 'bg-red-600'; }
-    else if (t.priority === 'high') { color = 'text-amber-500'; bg = 'bg-amber-100'; dot = 'bg-amber-500'; }
-    else if (t.priority === 'medium') { color = 'text-blue-600'; bg = 'bg-blue-100'; dot = 'bg-blue-600'; }
-    else if (t.priority === 'low') { color = 'text-emerald-600'; bg = 'bg-emerald-100'; dot = 'bg-emerald-600'; }
-    
-    return {
-      id: t.id,
-      t: t.title,
-      c: t.category.charAt(0).toUpperCase() + t.category.slice(1),
-      p: t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
-      color, bg, dot
-    };
-  });
+
+  const totalTickets = tickets.length;
+  const openTickets = tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed').length;
+  const urgentTickets = tickets.filter(t => t.priority === 'urgent').length;
 
   return (
-    <div id="landing-page" className="min-h-screen bg-background text-foreground transition-colors duration-200 overflow-x-hidden font-sans selection:bg-primary/20">
+    <div id="landing-page" className="min-h-screen bg-[#123333] text-white transition-colors duration-200 overflow-x-hidden font-sans selection:bg-[#00d492]/20">
       
-      {/* Abstract Background Elements */}
+      {/* Abstract Ambient Glow Elements */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-400/10 blur-[120px]" />
-        <div className="absolute top-[40%] -right-[10%] w-[40%] h-[40%] rounded-full bg-[#4caf50]/10 blur-[120px]" />
+        <div className="absolute -top-[10%] -left-[10%] w-[55%] h-[55%] rounded-full bg-[#00d492]/10 blur-[130px]" />
+        <div className="absolute top-[35%] -right-[10%] w-[45%] h-[45%] rounded-full bg-[#0f3b6c]/30 blur-[140px]" />
+        <div className="absolute bottom-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-[#00d492]/5 blur-[120px]" />
       </div>
 
       {/* Top Header */}
-      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 bg-[#6c96c3] text-white shadow-md">
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-5 bg-[#123333] text-white border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+          <div className="grid size-10 place-items-center rounded-xl bg-[#00d492] text-[#123333] shadow-md font-bold">
             <Bot className="size-5" />
           </div>
           <div>
-            <span className="font-display text-lg font-bold tracking-tight text-slate-900">TechnoResolve Desk</span>
+            <span className="font-display text-lg font-bold tracking-tight text-white">TechnoResolve Desk</span>
           </div>
         </div>
         <div className="flex items-center gap-3 md:gap-4">
           <button
             id="landing-signin-btn"
             onClick={onOpenAuth}
-            className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-slate-900 transition-all hover:bg-slate-100 shadow-sm cursor-pointer"
+            className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[#123333] transition-all hover:bg-slate-100 shadow-sm cursor-pointer"
           >
             Sign in
           </button>
@@ -72,223 +64,464 @@ export const LandingPage: React.FC<{
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-12 md:pt-20">
+      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-12 md:pt-16 bg-[#123333]">
         
-        {/* Center Hero */}
+        {/* ================= 1. HERO SECTION ================= */}
         <div className="max-w-4xl mx-auto text-center space-y-8 mb-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-sm font-bold text-blue-700 border border-blue-200 shadow-sm mb-6">
-              <Sparkles className="size-4 text-blue-600" />
-              AI ticket classification built in
+            {/* Pill style badge */}
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#123333] px-4 py-1.5 text-sm font-bold text-white border border-[#00d492]/40 shadow-sm mb-6">
+              <Sparkles className="size-4 text-white" />
+              ✦ AI ticket classification built in
             </span>
-            <h1 className="text-5xl md:text-7xl leading-[1.05] font-extrabold tracking-tight text-[#0f3b6c] font-display">
-              One desk. Three very different views.
+
+            {/* Hero Heading */}
+            <h1 className="text-5xl md:text-7xl leading-[1.08] font-extrabold tracking-tight text-white font-display">
+              Smart IT Service Management
             </h1>
-            <p className="mt-6 text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
-              Customers get a clean self-service storefront. Technicians get a fast workspace. Admins get a dense control center. Every incoming request is triaged by AI before it lands.
+
+            {/* Hero Subheading */}
+            <p className="mt-6 text-lg md:text-xl text-slate-200 leading-relaxed max-w-3xl mx-auto font-medium">
+              TechnoResolve automates ticket classification and priority routing in real time. Seamlessly connect users, support technicians, and IT managers in one centralized operational system.
             </p>
           </motion.div>
 
+          {/* Primary Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2"
           >
             <button
               id="hero-get-started-btn"
               onClick={onOpenAuth}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0f3b6c] px-8 py-4 text-base font-bold text-white transition-all hover:bg-[#0a2e5c] shadow-sm hover:shadow-md cursor-pointer"
+              style={{ backgroundColor: '#ffffff', color: '#123333' }}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-bold transition-all hover:bg-slate-100 shadow-md cursor-pointer"
             >
               <span>Launch Desk</span>
-              <ArrowRight className="size-4" />
+              <ArrowRight className="size-4 text-[#123333]" />
             </button>
             <button
               id="hero-submit-request-btn"
               onClick={onOpenNewTicket}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-transparent bg-[#0f3b6c] px-8 py-4 text-base font-bold text-white transition-all hover:bg-[#0a2e5c] shadow-sm cursor-pointer"
+              style={{ backgroundColor: '#fbfafa', color: '#123333' }}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-8 py-4 text-base font-bold transition-all hover:bg-white shadow-md cursor-pointer"
             >
-              <span>Submit a request</span>
+              <span className="text-[#123333] font-extrabold">Submit a request</span>
             </button>
           </motion.div>
 
+          {/* Trust points */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-wrap items-center justify-center gap-6 md:gap-8 pt-8 text-sm font-semibold text-slate-500"
+            transition={{ duration: 0.5, delay: 0.25 }}
+            className="flex flex-wrap items-center justify-center gap-6 md:gap-8 pt-6 text-sm font-semibold text-white/90"
           >
             <span className="flex items-center gap-2">
-              <CheckCircle2 className="size-4.5 text-emerald-500" />
+              <CheckCircle2 className="size-4.5 text-[#00d492]" />
               Zero setup required
             </span>
             <span className="flex items-center gap-2">
-              <Lock className="size-4.5 text-emerald-500" />
-              Role-based access
+              <Lock className="size-4.5 text-[#00d492]" />
+              Role-based access control
             </span>
             <span className="flex items-center gap-2">
-              <Layers className="size-4.5 text-emerald-500" />
-              Gemini 2.5 AI Triage
+              <Layers className="size-4.5 text-[#00d492]" />
+              Gemini AI Triage Engine
             </span>
           </motion.div>
         </div>
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 md:gap-8 auto-rows-[minmax(300px,auto)]">
-          
-          {/* Bento Box 1: Live Triage Engine (Col Span 4) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="md:col-span-4 rounded-3xl bg-white border border-slate-200 p-8 shadow-xl flex flex-col relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
-            
-            <div className="flex items-center justify-between mb-8 relative z-10">
-              <div>
-                <h3 className="text-2xl font-bold text-slate-900 font-display mb-1 flex items-center gap-2">
-                  <Bot className="size-6 text-blue-400" /> Active Engine
-                </h3>
-                <p className="text-slate-400 text-sm">Gemini routing tickets in real-time</p>
-              </div>
-              <div className="text-right">
-                <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 bg-emerald-400/10 px-3 py-1.5 rounded-full">
-                  <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Preview
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 space-y-3 relative z-10">
-              <AnimatePresence mode="popLayout">
-                {triageItems.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, x: -20, scale: 0.95 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 backdrop-blur-sm"
-                  >
-                    <span className="font-semibold text-slate-800 text-sm truncate flex-1 pr-4">
-                      {item.t}
-                    </span>
-                    <div className="flex shrink-0 items-center gap-2.5">
-                      <span className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs font-bold text-slate-700 border border-slate-600">
-                        {item.c}
-                      </span>
-                      <span className={`flex items-center gap-1.5 rounded-lg ${item.bg} px-3 py-1.5 text-xs font-bold ${item.color}`}>
-                        <span className={`size-1.5 rounded-full ${item.dot}`} />
-                        {item.p}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-
-            <div className="mt-8 pt-4 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-500 font-mono relative z-10">
-              <span>Avg classification: <strong className="text-slate-700">0.38s</strong></span>
-              <span>Confidence: <strong className="text-blue-400">96.4%</strong></span>
-            </div>
-          </motion.div>
-
-          {/* Bento Box 2: Customer Portal (Col Span 2) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="md:col-span-2 rounded-3xl bg-white border border-slate-200 p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col relative overflow-hidden group cursor-pointer"
-            onClick={onOpenAuth}
-          >
-            <div className="absolute -right-6 -top-6 size-32 bg-sky-100 rounded-full blur-[40px] group-hover:bg-sky-200 transition-colors pointer-events-none" />
-            
-            <div className="size-12 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center mb-6 relative z-10">
-              <LifeBuoy className="size-6" />
-            </div>
-            
-            <h3 className="text-xl font-bold text-slate-900 font-display mb-3 relative z-10">
-              Customer self-service
-            </h3>
-            <p className="text-slate-600 text-sm leading-relaxed flex-1 relative z-10 font-medium">
-              One friendly place to submit a request, track it, and search the knowledge base.
+        {/* ================= 2. "HOW IT WORKS" PIPELINE (3-Step Pipeline) ================= */}
+        <div className="mb-24">
+          <div className="text-center mb-12">
+            <span className="text-xs font-bold font-mono tracking-widest text-white uppercase bg-[#00d492]/10 border border-[#00d492]/20 px-3 py-1 rounded-full">
+              Automated Lifecycle
+            </span>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white font-display mt-3">
+              How It Works
+            </h2>
+            <p className="text-slate-300 text-sm md:text-base max-w-xl mx-auto mt-2">
+              From submission to resolution in three streamlined, automated steps.
             </p>
-            
-            <div className="mt-6 flex items-center gap-1.5 text-sm font-bold text-sky-600 group-hover:translate-x-1 transition-transform relative z-10">
-              Preview Customer Portal <ArrowRight className="size-4" />
-            </div>
-          </motion.div>
+          </div>
 
-          {/* Bento Box 3: Technician Workspace (Col Span 3) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="md:col-span-3 rounded-3xl bg-white border border-slate-200 p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-6 items-start sm:items-center relative overflow-hidden group cursor-pointer"
-            onClick={onOpenAuth}
-          >
-             <div className="absolute -left-10 -bottom-10 size-40 bg-purple-100 rounded-full blur-[50px] group-hover:bg-purple-200 transition-colors pointer-events-none" />
-
-            <div className="size-14 shrink-0 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center relative z-10">
-              <Zap className="size-7" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-xl font-bold text-slate-900 font-display mb-2">
-                Technician workspace
-              </h3>
-              <p className="text-slate-600 text-sm leading-relaxed mb-4 font-medium">
-                A live queue, focused active-ticket pane, quick replies and instant AI resolve actions.
-              </p>
-              <div className="flex items-center gap-1.5 text-sm font-bold text-purple-600 group-hover:translate-x-1 transition-transform">
-                Preview Tech Workspace <ArrowRight className="size-4" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+            {/* Step 1 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="rounded-3xl bg-[#ffffff] text-[#123333] border border-white p-7 shadow-xl relative overflow-hidden flex flex-col justify-between"
+            >
+              <div className="size-12 rounded-2xl bg-[#ffffff] border border-slate-200 shadow-sm flex items-center justify-center text-[#123333] font-display text-xl font-bold mb-5">
+                1
               </div>
-            </div>
-          </motion.div>
-
-          {/* Bento Box 4: Admin Center (Col Span 3) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-            className="md:col-span-3 rounded-3xl bg-white border border-slate-200 p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-6 items-start sm:items-center relative overflow-hidden group cursor-pointer"
-            onClick={onOpenAuth}
-          >
-            <div className="absolute right-0 bottom-0 size-40 bg-rose-100 rounded-full blur-[50px] group-hover:bg-rose-200 transition-colors pointer-events-none" />
-
-            <div className="size-14 shrink-0 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center relative z-10">
-              <ShieldCheck className="size-7" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-xl font-bold text-slate-900 font-display mb-2">
-                Admin control center
-              </h3>
-              <p className="text-slate-600 text-sm leading-relaxed mb-4 font-medium">
-                System analytics, user & role management, deep configuration and data exports.
-              </p>
-              <div className="flex items-center gap-1.5 text-sm font-bold text-rose-600 group-hover:translate-x-1 transition-transform">
-                Preview Admin View <ArrowRight className="size-4" />
+              <div>
+                <h3 className="text-xl font-bold text-[#123333] font-display mb-2">
+                  Smart Request Submission
+                </h3>
+                <p className="text-[#123333]/85 text-sm leading-relaxed">
+                  End users log incidents via the simple self-service portal with zero training needed.
+                </p>
               </div>
-            </div>
-          </motion.div>
+              <div className="mt-6 pt-4 border-t border-slate-200 flex items-center gap-2 text-xs text-[#123333] font-semibold">
+                <FileText className="size-4 text-[#123333]" />
+                <span className="text-[#123333]">Zero-friction intake</span>
+              </div>
+            </motion.div>
 
+            {/* Step 2 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="rounded-3xl bg-[#ffffff] text-[#123333] border border-slate-200 p-7 shadow-xl relative overflow-hidden flex flex-col justify-between ring-1 ring-[#123333]/10"
+            >
+              <div className="size-12 rounded-2xl bg-[#ffffff] border border-[#123333] text-[#123333] flex items-center justify-center font-display text-xl font-extrabold mb-5 shadow-sm">
+                2
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-[#123333] text-[11px] font-bold uppercase mb-2 border border-slate-200">
+                  <Sparkles className="size-3 text-[#123333]" /> AI Powered
+                </div>
+                <h3 className="text-xl font-bold text-[#123333] font-display mb-2">
+                  Automated AI Triage
+                </h3>
+                <p className="text-[#123333]/85 text-sm leading-relaxed">
+                  The AI engine categorizes requests, assigns priority levels (<span className="text-emerald-600 font-semibold">Low</span>, <span className="text-[#ffb050] font-semibold">Medium</span>, <span className="text-rose-600 font-semibold">Urgent</span>), and directs tickets to dedicated queues.
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-slate-200 flex items-center gap-2 text-xs text-[#123333] font-semibold">
+                <Bot className="size-4 text-[#123333]" />
+                <span className="text-[#123333]">Instant classification</span>
+              </div>
+            </motion.div>
+
+            {/* Step 3 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="rounded-3xl bg-[#ffffff] text-[#123333] border border-white p-7 shadow-xl relative overflow-hidden flex flex-col justify-between"
+            >
+              <div className="size-12 rounded-2xl bg-[#ffffff] border border-slate-200 shadow-sm flex items-center justify-center text-[#123333] font-display text-xl font-bold mb-5">
+                3
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-[#123333] font-display mb-2">
+                  Rapid Resolution & Chat
+                </h3>
+                <p className="text-[#123333]/85 text-sm leading-relaxed">
+                  Technicians take tickets, use quick replies, and resolve issues via real-time integrated chat.
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-slate-200 flex items-center gap-2 text-xs text-[#123333] font-semibold">
+                <MessageSquare className="size-4 text-[#123333]" />
+                <span className="text-[#123333]">Live technician collaboration</span>
+              </div>
+            </motion.div>
+          </div>
         </div>
+
+        {/* ================= 3. CORE ROLE FEATURE BREAKDOWN (3-Card Grid) ================= */}
+        <div className="mb-24">
+          <div className="text-center mb-12">
+            <span className="text-xs font-bold font-mono tracking-widest text-[#00d492] uppercase bg-[#00d492]/10 border border-[#00d492]/20 px-3 py-1 rounded-full">
+              Unified Ecosystem
+            </span>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white font-display mt-3">
+              Core Role Feature Breakdown
+            </h2>
+            <p className="text-slate-300 text-sm md:text-base max-w-xl mx-auto mt-2">
+              Three tailored, purpose-built interfaces connected into a single operational brain.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            {/* Card 1: End-User Self-Service Storefront */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="rounded-3xl bg-[#0c2424] border border-white/10 p-8 shadow-xl flex flex-col justify-between group hover:border-[#00d492]/40 transition-all"
+            >
+              <div>
+                <div className="size-14 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-400 flex items-center justify-center mb-6">
+                  <LifeBuoy className="size-7" />
+                </div>
+                <h3 className="text-2xl font-bold text-white font-display mb-3">
+                  End-User Self-Service Storefront
+                </h3>
+                <p className="text-slate-300 text-sm leading-relaxed mb-6">
+                  Frictionless request logging and live status visibility for organization members.
+                </p>
+
+                <ul className="space-y-3.5 text-sm text-slate-200">
+                  <li className="flex items-start gap-3">
+                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
+                      <Check className="size-3.5" />
+                    </div>
+                    <span>
+                      Instant ticket logging button (<strong className="text-white font-mono text-xs">+ Submit a new request</strong>)
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
+                      <Check className="size-3.5" />
+                    </div>
+                    <span>
+                      Real-time ticket history with live status badges
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
+                      <Check className="size-3.5" />
+                    </div>
+                    <span>
+                      Transparent issue tracking without support blind spots
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <button
+                  onClick={onOpenNewTicket}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#123333] hover:bg-[#1a4444] border border-[#00d492]/40 text-[#00d492] text-xs font-bold transition-all cursor-pointer"
+                >
+                  <PlusCircle className="size-4" />
+                  <span>Submit Sample Request</span>
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Card 2: Technician Workspace */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="rounded-3xl bg-[#0c2424] border border-white/10 p-8 shadow-xl flex flex-col justify-between group hover:border-[#00d492]/40 transition-all"
+            >
+              <div>
+                <div className="size-14 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center mb-6">
+                  <Zap className="size-7" />
+                </div>
+                <h3 className="text-2xl font-bold text-white font-display mb-3">
+                  Technician Workspace
+                </h3>
+                <p className="text-slate-300 text-sm leading-relaxed mb-6">
+                  Speed-optimized queue execution with integrated AI resolution assistants.
+                </p>
+
+                <ul className="space-y-3.5 text-sm text-slate-200">
+                  <li className="flex items-start gap-3">
+                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
+                      <Check className="size-3.5" />
+                    </div>
+                    <span>
+                      Filterable dynamic queues: <strong className="text-white font-mono text-xs">New</strong>, <strong className="text-white font-mono text-xs">Working</strong>, <strong className="text-white font-mono text-xs">Escalated</strong> with real-time counters
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
+                      <Check className="size-3.5" />
+                    </div>
+                    <span>
+                      Rapid action buttons: <strong className="text-white font-mono text-xs">Take</strong>, <strong className="text-white font-mono text-xs">Escalate</strong>, and <strong className="text-white font-mono text-xs">Resolve</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
+                      <Check className="size-3.5" />
+                    </div>
+                    <span>
+                      Integrated direct ticket messaging with quick response templates (<strong className="text-white font-mono text-xs">Acknowledge</strong>, <strong className="text-white font-mono text-xs">Need Info</strong>)
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <button
+                  onClick={onOpenAuth}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#123333] hover:bg-[#1a4444] border border-purple-500/40 text-purple-300 text-xs font-bold transition-all cursor-pointer"
+                >
+                  <SlidersHorizontal className="size-4" />
+                  <span>Open Tech Workspace</span>
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Card 3: Admin Control Center */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="rounded-3xl bg-[#0c2424] border border-white/10 p-8 shadow-xl flex flex-col justify-between group hover:border-[#00d492]/40 transition-all"
+            >
+              <div>
+                <div className="size-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mb-6">
+                  <ShieldCheck className="size-7" />
+                </div>
+                <h3 className="text-2xl font-bold text-white font-display mb-3">
+                  Admin Control Center
+                </h3>
+                <p className="text-slate-300 text-sm leading-relaxed mb-6">
+                  End-to-end operational governance, audit logs, and team workload analytics.
+                </p>
+
+                <ul className="space-y-3.5 text-sm text-slate-200">
+                  <li className="flex items-start gap-3">
+                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
+                      <Check className="size-3.5" />
+                    </div>
+                    <span>
+                      High-level metric cards: <strong className="text-white font-mono text-xs">Total requests ({totalTickets})</strong>, <strong className="text-white font-mono text-xs">Open workload ({openTickets})</strong>, and <strong className="text-white font-mono text-xs">Urgent ({urgentTickets})</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
+                      <Check className="size-3.5" />
+                    </div>
+                    <span>
+                      Operational workload tracking and incident oversight
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
+                      <Check className="size-3.5" />
+                    </div>
+                    <span>
+                      Role-switching selector to audit user, technician, and admin views seamlessly
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <button
+                  onClick={onOpenAuth}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#123333] hover:bg-[#1a4444] border border-rose-500/40 text-rose-300 text-xs font-bold transition-all cursor-pointer"
+                >
+                  <BarChart3 className="size-4" />
+                  <span>Access Admin Control</span>
+                </button>
+              </div>
+            </motion.div>
+
+          </div>
+        </div>
+
+        {/* ================= 4. OPERATIONAL IMPACT SUMMARY BAR ================= */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-24 rounded-3xl bg-[#0c2424] border border-[#00d492]/30 p-8 md:p-10 shadow-2xl relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#00d492]/10 blur-[100px] pointer-events-none rounded-full" />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10 divide-y md:divide-y-0 md:divide-x divide-white/10">
+            {/* Metric 1 */}
+            <div className="flex items-start gap-4 pt-4 md:pt-0 md:px-4 first:pl-0">
+              <div className="size-12 rounded-2xl bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0">
+                <Bot className="size-6" />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white font-display">Zero Manual Sorting</h4>
+                <p className="text-slate-300 text-sm mt-1 leading-relaxed">
+                  Instant AI-driven routing on intake.
+                </p>
+              </div>
+            </div>
+
+            {/* Metric 2 */}
+            <div className="flex items-start gap-4 pt-6 md:pt-0 md:px-6">
+              <div className="size-12 rounded-2xl bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0">
+                <TrendingDown className="size-6" />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white font-display">Reduced MTTR</h4>
+                <p className="text-slate-300 text-sm mt-1 leading-relaxed">
+                  Direct ticket assignment and context-rich queues.
+                </p>
+              </div>
+            </div>
+
+            {/* Metric 3 */}
+            <div className="flex items-start gap-4 pt-6 md:pt-0 md:px-6 last:pr-0">
+              <div className="size-12 rounded-2xl bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0">
+                <Eye className="size-6" />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-white font-display">Full Operational Visibility</h4>
+                <p className="text-slate-300 text-sm mt-1 leading-relaxed">
+                  Unified control center across the entire team.
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ================= 5. BOTTOM CALL-TO-ACTION ================= */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="rounded-3xl bg-gradient-to-br from-[#0c2424] via-[#123333] to-[#0c2424] border border-white/20 p-10 md:p-14 text-center max-w-4xl mx-auto shadow-2xl relative overflow-hidden"
+        >
+          <div className="relative z-10 space-y-6">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-white font-display tracking-tight">
+              Ready to Streamline Your IT Operations?
+            </h2>
+            <p className="text-slate-200 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+              Access the live environment and switch between user, technician, and administrative roles.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <button
+                id="cta-launch-desk-btn"
+                onClick={onOpenAuth}
+                style={{ backgroundColor: '#ffffff', color: '#123333' }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-bold transition-all hover:bg-slate-100 shadow-md cursor-pointer"
+              >
+                <span>Launch Desk</span>
+                <ArrowRight className="size-4 text-[#123333]" />
+              </button>
+              <button
+                id="cta-submit-request-btn"
+                onClick={onOpenNewTicket}
+                style={{ backgroundColor: '#fbfafa', color: '#123333' }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-8 py-4 text-base font-bold transition-all hover:bg-white shadow-md cursor-pointer"
+              >
+                <span className="text-[#00d492] font-extrabold">Submit a Request</span>
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-10 text-center relative z-10">
-        <p className="text-sm font-medium text-slate-500">
-          © {new Date().getFullYear()} TechnoResolve Desk. Powered by Gemini 2.5 Flash Triage Engine.
+      <footer className="border-t border-white/10 bg-[#0c2424] py-10 text-center relative z-10 text-slate-400">
+        <p className="text-sm font-medium">
+          © {new Date().getFullYear()} TechnoResolve Desk. Powered by Gemini AI Triage Engine.
         </p>
       </footer>
     </div>
   );
 };
+

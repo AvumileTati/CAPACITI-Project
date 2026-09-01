@@ -15,6 +15,10 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Paperclip,
+  Trash2,
+  Download,
+  FileText as FileIcon,
 } from 'lucide-react';
 
 export const TicketChatModal: React.FC<{
@@ -44,13 +48,14 @@ export const TicketChatModal: React.FC<{
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const newAttachments = Array.from(e.target.files).map(file => ({
+      const filesArray: File[] = Array.from(e.target.files);
+      const newAttachments = filesArray.map((file) => ({
         id: Math.random().toString(36).substring(7),
         file,
         previewUrl: URL.createObjectURL(file),
-        size: file.size
+        size: file.size,
       }));
-      setAttachments(prev => [...prev, ...newAttachments].slice(0, 5));
+      setAttachments((prev) => [...prev, ...newAttachments].slice(0, 5));
     }
   };
 
@@ -59,12 +64,12 @@ export const TicketChatModal: React.FC<{
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
+      reader.onerror = (error) => reject(error);
     });
   };
 
   const removeAttachment = (id: string) => {
-    setAttachments(prev => prev.filter(a => a.id !== id));
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
   const [isInternal, setIsInternal] = useState(false);
@@ -92,12 +97,33 @@ export const TicketChatModal: React.FC<{
     return true;
   });
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputBody.trim()) return;
+    if (!inputBody.trim() && attachments.length === 0) return;
 
-    sendMessage(ticket.id, inputBody.trim(), isInternal);
-    setInputBody('');
+    try {
+      const processedAttachments = await Promise.all(
+        attachments.map(async (att) => {
+          let url = att.previewUrl;
+          if (att.size < 500000) {
+            url = await fileToBase64(att.file);
+          }
+          return {
+            id: att.id,
+            name: att.file.name,
+            size: att.size,
+            type: att.file.type,
+            url: url,
+          };
+        })
+      );
+
+      await sendMessage(ticket.id, inputBody.trim(), isInternal, processedAttachments);
+      setInputBody('');
+      setAttachments([]);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleAIDraft = async () => {
@@ -305,7 +331,7 @@ export const TicketChatModal: React.FC<{
                               {att.type.startsWith('image/') ? (
                                   <img src={att.url} alt={att.name} className="size-full object-cover" />
                               ) : (
-                                  <File className="size-3 text-amber-600 dark:text-amber-400" />
+                                  <FileIcon className="size-3 text-amber-600 dark:text-amber-400" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -367,7 +393,7 @@ export const TicketChatModal: React.FC<{
                               {att.type.startsWith('image/') ? (
                                   <img src={att.url} alt={att.name} className="size-full object-cover" />
                               ) : (
-                                  <File className="size-3 text-current opacity-70" />
+                                  <FileIcon className="size-3 text-current opacity-70" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -475,7 +501,7 @@ export const TicketChatModal: React.FC<{
                     {att.file.type.startsWith('image/') ? (
                       <img src={att.previewUrl} alt="preview" className="size-full object-cover" />
                     ) : (
-                      <File className="size-4 text-muted-foreground" />
+                      <FileIcon className="size-4 text-muted-foreground" />
                     )}
                   </div>
                   <div className="text-xs overflow-hidden max-w-[100px]">

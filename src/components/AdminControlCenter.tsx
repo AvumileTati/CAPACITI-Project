@@ -376,7 +376,7 @@ export const AdminControlCenter: React.FC = () => {
       {/* Main Workspace View */}
       <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 backdrop-blur-md border-b border-slate-700/50 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-[#1a4043] text-white shadow-md">
+        <header className="sticky top-0 z-30 backdrop-blur-md border-b border-[#123333] px-4 sm:px-8 py-3.5 flex items-center justify-between bg-[#123333] text-white shadow-md">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
