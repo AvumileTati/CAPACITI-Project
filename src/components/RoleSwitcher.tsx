@@ -59,22 +59,26 @@ export const RoleSwitcher: React.FC = () => {
             id={`role-btn-${r.id}`}
             onClick={() => handleRoleClick(r.id)}
             title={isLocked ? `${r.label} (Locked - Requires higher privileges)` : `Switch to ${r.label}`}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-all cursor-pointer shadow-sm ${
+            style={{
+              backgroundColor: '#ffffff',
+              color: '#0f3b6c',
+            }}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer shadow-sm border ${
               isActive
-                ? (r.id === 'admin' ? 'bg-[#10b981] text-white font-bold' : r.id === 'technician' ? 'bg-[#3b82f6] text-white font-bold' : 'bg-[#f59e0b] text-white font-bold')
+                ? 'border-[#0f3b6c] ring-2 ring-[#0f3b6c]/20 shadow-md font-bold'
                 : isLocked
-                ? 'bg-slate-100 text-slate-400 opacity-60 border border-slate-200'
-                : (r.id === 'admin' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : r.id === 'technician' ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100')
+                ? 'opacity-60 border-slate-200 cursor-not-allowed'
+                : 'border-slate-200 hover:border-[#0f3b6c]/40 hover:shadow-xs'
             }`}
           >
             {isLocked ? (
-              <Lock className="size-3 text-slate-500 shrink-0" />
+              <Lock className="size-3 text-slate-400 shrink-0" />
             ) : (
-              <Icon className="size-3.5 shrink-0" />
+              <Icon className="size-3.5 shrink-0" style={{ color: '#0f3b6c' }} />
             )}
-            <span className="capitalize">{r.label}</span>
+            <span className="capitalize" style={{ color: '#0f3b6c' }}>{r.label}</span>
             {r.id === 'admin' && isAdmin && !isActive && (
-              <Crown className="size-2.5 text-amber-400 shrink-0" />
+              <Crown className="size-2.5 text-amber-500 shrink-0" />
             )}
           </button>
         );
