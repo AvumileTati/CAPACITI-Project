@@ -412,7 +412,7 @@ export const AdminControlCenter: React.FC = () => {
             <button
               onClick={handleExportCSV}
               style={{
-                backgroundColor: '#ffffff',
+                backgroundColor: '#fcfcfc',
                 color: '#0f3b6c',
               }}
               className="hidden sm:flex items-center gap-1.5 border border-slate-200 hover:bg-slate-50 text-xs font-semibold px-3.5 py-2 rounded-xl shadow-sm transition-all cursor-pointer"

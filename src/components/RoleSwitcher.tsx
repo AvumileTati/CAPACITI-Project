@@ -58,6 +58,10 @@ export const RoleSwitcher: React.FC = () => {
             key={r.id}
             id={`role-btn-${r.id}`}
             onClick={() => handleRoleClick(r.id)}
+            style={{
+              backgroundColor: '#ffffff',
+              color: '#0f3b6c',
+            }}
             title={isLocked ? `${r.label} (Locked - Requires higher privileges)` : `Switch to ${r.label}`}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-all cursor-pointer shadow-sm ${
               isActive
