@@ -92,10 +92,10 @@ export const AdminControlCenter: React.FC = () => {
   const totalTickets = tickets.length;
   const openWorkload = tickets.filter((t) => !['resolved', 'closed'].includes(t.status)).length;
   const urgentTickets = tickets.filter((t) => t.priority === 'urgent' || t.status === 'escalated').length;
-  const aiClassifiedCount = tickets.filter((t) => t.ai_category).length;
-  const aiConfidencePct = Math.round(
-    (tickets.reduce((acc, t) => acc + (t.ai_confidence || 0.72), 0) / Math.max(1, totalTickets)) * 100
-  );
+  const aiClassifiedCount = tickets.filter((t) => !!t.ai_category).length;
+  const aiConfidencePct = totalTickets > 0 
+    ? Math.round((tickets.reduce((acc, t) => acc + (t.ai_confidence || 0.85), 0) / totalTickets) * 100)
+    : 0;
 
   // Unapproved users list
   const pendingUsers = useMemo(() => {
@@ -110,62 +110,68 @@ export const AdminControlCenter: React.FC = () => {
       const dayKey = d.toISOString().slice(0, 10);
       const dayLabel = d.toLocaleDateString([], { weekday: 'short' });
 
-      const created = tickets.filter((t) => t.created_at.slice(0, 10) === dayKey).length;
+      const created = tickets.filter((t) => (t.created_at || '').slice(0, 10) === dayKey).length;
       const resolved = tickets.filter(
-        (t) => t.status === 'resolved' && (t.resolved_at || t.updated_at).slice(0, 10) === dayKey
+        (t) => (t.status === 'resolved' || t.status === 'closed') && (t.resolved_at || t.updated_at || '').slice(0, 10) === dayKey
       ).length;
 
       return {
         day: dayLabel,
-        created: created + (i === 6 ? 2 : (i % 2) + 1),
-        resolved: resolved + (i === 6 ? 1 : i % 2),
+        created,
+        resolved,
       };
     });
   }, [tickets]);
 
-  // Category distribution data
-  const categoryChartData = useMemo(() => {
-    const counts: Record<string, number> = {};
-    tickets.forEach((t) => {
-      counts[t.category] = (counts[t.category] || 0) + 1;
+  // Dynamic category breakdown with priority distributions
+  const categoryBreakdownData = useMemo(() => {
+    const list = CATEGORIES.map((cat) => {
+      const catTickets = tickets.filter((t) => t.category === cat.value);
+      const total = catTickets.length;
+      const urgent = catTickets.filter((t) => t.priority === 'urgent').length;
+      const high = catTickets.filter((t) => t.priority === 'high').length;
+      const medium = catTickets.filter((t) => t.priority === 'medium').length;
+      const low = catTickets.filter((t) => t.priority === 'low').length;
+
+      return {
+        key: cat.value,
+        name: cat.label.split(' ')[0],
+        fullName: cat.label,
+        total,
+        urgent,
+        high,
+        medium,
+        low,
+      };
     });
 
-    return Object.entries(counts).map(([cat, count]) => ({
-      name: getCategoryLabel(cat).split(' ')[0],
-      fullName: getCategoryLabel(cat),
-      count: count,
-    }));
+    // Sort by count descending, ensure top 4 categories are shown
+    const sorted = [...list].sort((a, b) => b.total - a.total);
+    return sorted.slice(0, 4);
   }, [tickets]);
 
   // Status distribution data
   const statusChartData = useMemo(() => {
-    const counts: Record<string, number> = {
-      open: 0,
-      in_progress: 0,
-      escalated: 0,
-      resolved: 0,
-      closed: 0,
-    };
-    tickets.forEach((t) => {
-      counts[t.status] = (counts[t.status] || 0) + 1;
-    });
+    const statusDefs = [
+      { key: 'new', label: 'New', color: '#38bdf8' },
+      { key: 'in_progress', label: 'In Progress', color: '#f59e0b' },
+      { key: 'pending_user', label: 'Pending User', color: '#a855f7' },
+      { key: 'escalated', label: 'Escalated', color: '#ef4444' },
+      { key: 'resolved', label: 'Resolved', color: '#10b981' },
+      { key: 'closed', label: 'Closed', color: '#64748b' },
+    ];
 
-    const colors: Record<string, string> = {
-      open: '#3b82f6',
-      in_progress: '#8b5cf6',
-      escalated: '#ef4444',
-      resolved: '#10b981',
-      closed: '#64748b',
-    };
-
-    return Object.entries(counts)
-      .filter(([_, count]) => count > 0)
-      .map(([status, count]) => ({
-        name: formatStatus(status),
+    return statusDefs.map((def) => {
+      const count = tickets.filter((t) => t.status === def.key).length;
+      return {
+        key: def.key,
+        name: def.label,
         count,
-        color: colors[status] || '#94a3b8',
-      }));
-  }, [tickets]);
+        color: def.color,
+        percentage: totalTickets > 0 ? (count / totalTickets) * 100 : 0,
+      };
+    });
+  }, [tickets, totalTickets]);
 
   // Filtered tickets table
   const filteredTickets = useMemo(() => {
@@ -277,14 +283,14 @@ export const AdminControlCenter: React.FC = () => {
         }`}
       >
         {/* Brand Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-[#151617]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#61c82d] bg-[#1a3a41]">
           <div className="flex items-center gap-3">
             <div className="grid size-9 place-items-center rounded-xl bg-slate-100 text-[#0f3b6c] border border-[#0f3b6c]/20 shadow-xs">
               <ShieldCheck className="size-5" />
             </div>
             <div>
-              <p className="font-bold text-sm tracking-tight bg-[#100f0f] text-[#1c0808]">TechnoResolve Control</p>
-              <p className="text-[11px] font-mono font-semibold text-[#110202]">Administrator</p>
+              <p className="font-bold text-sm tracking-tight bg-[#123333] text-[#f5e9e9] border border-[#103933] px-1.5 py-0.5 rounded">TechnoResolve Control</p>
+              <p className="text-[11px] font-mono font-semibold bg-[#123333] text-[#f7ebeb] border border-[#113737] px-1.5 py-0.5 rounded mt-0.5">Administrator</p>
             </div>
           </div>
           <button
@@ -296,10 +302,10 @@ export const AdminControlCenter: React.FC = () => {
         </div>
 
         {/* Nav Groups */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 bg-[#123333]">
           {navItems.map((group) => (
             <div key={group.group} className="space-y-1">
-              <p className="text-[11px] font-bold tracking-wider uppercase text-slate-500 px-3 mb-2">
+              <p className="text-[11px] font-bold tracking-wider uppercase text-slate-400 px-3 mb-2">
                 {group.group}
               </p>
               {group.items.map((item) => {
@@ -315,11 +321,11 @@ export const AdminControlCenter: React.FC = () => {
                     className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all cursor-pointer ${
                       isActive
                         ? 'bg-slate-100 text-[#0f3b6c] border border-[#0f3b6c]/20 shadow-xs'
-                        : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'
+                        : 'text-slate-300 hover:text-white hover:bg-white/10'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Icon className={`size-4 shrink-0 ${isActive ? 'text-[#0f3b6c]' : 'text-slate-400'}`} />
+                      <Icon className={`size-4 shrink-0 ${isActive ? 'text-[#0f3b6c]' : 'text-slate-300'}`} />
                       <span>{item.label}</span>
                     </div>
                     {item.badge !== undefined && (
@@ -341,10 +347,10 @@ export const AdminControlCenter: React.FC = () => {
         </div>
 
         {/* Quick action buttons */}
-        <div className="p-3 border-t border-slate-200 space-y-2">
+        <div className="p-3 border-t border-slate-700/50 space-y-2 bg-[#0f302e]">
           <button
             onClick={() => setIsOutboxOpen(true)}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-50 hover:bg-[#122e5a] text-[#0f3b6c] text-xs font-semibold border border-cyan-900/50 transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-teal-500/30 transition-all cursor-pointer"
           >
             <Mail className="size-3.5" />
             <span>Open Email Outbox ({outbox.length})</span>
@@ -352,15 +358,15 @@ export const AdminControlCenter: React.FC = () => {
         </div>
 
         {/* Footer: User profile & Logout */}
-        <div className="p-4 border-t border-slate-200 flex items-center justify-between">
+        <div className="p-4 border-t border-slate-700/50 flex items-center justify-between bg-[#0f2a2a]">
           <div className="text-xs">
-            <p className="font-bold text-slate-900 truncate max-w-[140px]">{currentUser?.full_name || 'Admin User'}</p>
-            <p className="text-[11px] text-slate-400 font-mono truncate max-w-[140px]">{currentUser?.email}</p>
+            <p className="font-bold text-[#fffafa] truncate max-w-[140px]">{currentUser?.full_name || 'Admin User'}</p>
+            <p className="text-[11px] text-[#fcfdfe] font-mono truncate max-w-[140px]">{currentUser?.email}</p>
           </div>
           <button
             onClick={signOut}
             title="Sign out"
-            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-slate-300 hover:text-rose-400 hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
           >
             <LogOut className="size-4" />
           </button>
@@ -370,17 +376,17 @@ export const AdminControlCenter: React.FC = () => {
       {/* Main Workspace View */}
       <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-[#487aea] text-white shadow-md">
+        <header className="sticky top-0 z-30 backdrop-blur-md border-b border-slate-700/50 px-4 sm:px-8 py-3.5 flex items-center justify-between bg-[#1a4043] text-white shadow-md">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer"
+              className="lg:hidden p-2 rounded-xl border border-white/20 text-white hover:bg-white/10 cursor-pointer"
             >
               <Menu className="size-4" />
             </button>
             <div>
-              <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">System Control Center</h1>
-              <p className="text-xs font-mono hidden sm:block border-[#171919] text-[#121111]">{currentUser?.email}</p>
+              <h1 className="text-base sm:text-lg font-extrabold text-[#eceff7] tracking-tight">System Control Center</h1>
+              <p className="text-xs font-mono hidden sm:block text-[#ffffff]">{currentUser?.email}</p>
             </div>
           </div>
 
@@ -472,8 +478,8 @@ export const AdminControlCenter: React.FC = () => {
                         <h3 className="text-3xl font-bold text-slate-900 leading-none">{totalTickets}</h3>
                         <p className="text-xs text-slate-500 mt-1">all time</p>
                       </div>
-                      <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5">
-                        <span className="text-emerald-500">▲</span>+2% from yesterday
+                      <span className="text-[11px] font-bold text-blue-600 flex items-center gap-0.5">
+                        <span className="text-blue-500">●</span>Live Queue
                       </span>
                     </div>
                   </div>
@@ -491,7 +497,7 @@ export const AdminControlCenter: React.FC = () => {
                         <p className="text-xs text-slate-500 mt-1">unresolved</p>
                       </div>
                       <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5">
-                        <span className="text-emerald-500">▼</span>-10% from yesterday
+                        {totalTickets > 0 ? `${Math.round((openWorkload / totalTickets) * 100)}% of total` : '0%'}
                       </span>
                     </div>
                   </div>
@@ -508,8 +514,8 @@ export const AdminControlCenter: React.FC = () => {
                         <h3 className="text-3xl font-bold text-slate-900 leading-none">{urgentTickets}</h3>
                         <p className="text-xs text-slate-500 mt-1">needs escalation</p>
                       </div>
-                      <span className="text-[11px] font-bold text-rose-600 flex items-center gap-0.5">
-                        <span className="text-rose-500">▲</span>+1 this hour
+                      <span className={`text-[11px] font-bold flex items-center gap-0.5 ${urgentTickets > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                        {urgentTickets > 0 ? `▲ ${urgentTickets} active` : '✓ None active'}
                       </span>
                     </div>
                   </div>
@@ -527,7 +533,7 @@ export const AdminControlCenter: React.FC = () => {
                         <p className="text-xs text-slate-500 mt-1">{aiClassifiedCount} auto-triaged</p>
                       </div>
                       <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5">
-                        <span className="text-emerald-500">▲</span>+0.5%
+                        {totalTickets > 0 ? `${Math.round((aiClassifiedCount / totalTickets) * 100)}% coverage` : '0%'}
                       </span>
                     </div>
                   </div>
@@ -562,7 +568,7 @@ export const AdminControlCenter: React.FC = () => {
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                           <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} dy={10} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
                           <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />
                           <Area type="monotone" dataKey="created" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#colorCreated)" />
                           <Area type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorResolved)" />
@@ -578,46 +584,40 @@ export const AdminControlCenter: React.FC = () => {
                         <h3 className="text-sm font-bold text-slate-900">Issue Categories</h3>
                         <p className="text-xs text-slate-500">Distribution across domains</p>
                       </div>
-                      <p className="text-[10px] text-slate-400">Last update: 11:18 AM</p>
+                      <p className="text-[10px] font-medium text-emerald-600 flex items-center gap-1">
+                        <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Live sync
+                      </p>
                     </div>
                     
                     <div className="flex-1 flex flex-col justify-center space-y-4">
-                      <div className="flex items-center gap-3">
-                        <span className="w-16 text-xs text-slate-700 text-right">Software</span>
-                        <div className="flex-1 h-4 flex rounded-sm overflow-hidden">
-                          <div className="bg-rose-500 w-[20%]"></div>
-                          <div className="bg-amber-500 w-[20%]"></div>
-                          <div className="bg-amber-300 w-[30%]"></div>
-                          <div className="bg-emerald-500 w-[15%]"></div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="w-16 text-xs text-slate-700 text-right">Hardware</span>
-                        <div className="flex-1 h-4 flex rounded-sm overflow-hidden">
-                          <div className="bg-rose-500 w-[30%]"></div>
-                          <div className="bg-amber-500 w-[40%]"></div>
-                          <div className="bg-amber-300 w-[20%]"></div>
-                          <div className="bg-emerald-500 w-[10%]"></div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="w-16 text-xs text-slate-700 text-right">Network</span>
-                        <div className="flex-1 h-4 flex rounded-sm overflow-hidden">
-                          <div className="bg-rose-500 w-[15%]"></div>
-                          <div className="bg-amber-500 w-[25%]"></div>
-                          <div className="bg-amber-300 w-[35%]"></div>
-                          <div className="bg-emerald-500 w-[25%]"></div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="w-16 text-xs text-slate-700 text-right">General</span>
-                        <div className="flex-1 h-4 flex rounded-sm overflow-hidden">
-                          <div className="bg-rose-500 w-[10%]"></div>
-                          <div className="bg-amber-500 w-[20%]"></div>
-                          <div className="bg-amber-300 w-[40%]"></div>
-                          <div className="bg-emerald-500 w-[30%]"></div>
-                        </div>
-                      </div>
+                      {categoryBreakdownData.map((cat) => {
+                        const uPct = cat.total > 0 ? (cat.urgent / cat.total) * 100 : 0;
+                        const hPct = cat.total > 0 ? (cat.high / cat.total) * 100 : 0;
+                        const mPct = cat.total > 0 ? (cat.medium / cat.total) * 100 : 0;
+                        const lPct = cat.total > 0 ? (cat.low / cat.total) * 100 : 0;
+
+                        return (
+                          <div key={cat.key} className="flex items-center gap-3">
+                            <div className="w-20 text-xs text-slate-700 text-right font-medium truncate flex items-center justify-end gap-1">
+                              <span>{cat.name}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">({cat.total})</span>
+                            </div>
+                            <div className="flex-1 h-4 flex rounded-sm overflow-hidden bg-slate-100">
+                              {cat.total > 0 ? (
+                                <>
+                                  {uPct > 0 && <div style={{ width: `${uPct}%` }} className="bg-rose-500" title={`Urgent: ${cat.urgent}`} />}
+                                  {hPct > 0 && <div style={{ width: `${hPct}%` }} className="bg-amber-500" title={`High: ${cat.high}`} />}
+                                  {mPct > 0 && <div style={{ width: `${mPct}%` }} className="bg-amber-300" title={`Medium: ${cat.medium}`} />}
+                                  {lPct > 0 && <div style={{ width: `${lPct}%` }} className="bg-emerald-500" title={`Low: ${cat.low}`} />}
+                                </>
+                              ) : (
+                                <div className="w-full bg-slate-50 text-[9px] text-slate-400 text-center leading-4 font-mono">0 requests</div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                     
                     <div className="flex items-center justify-center gap-3 mt-4 text-[10px] font-semibold text-slate-600">
@@ -634,15 +634,21 @@ export const AdminControlCenter: React.FC = () => {
                    {/* Status Donut & Bar */}
                    <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                       <div className="flex items-start justify-between mb-4">
-                        <h3 className="text-sm font-bold text-slate-900">Status Distribution</h3>
-                        <p className="text-[10px] text-slate-400">Last update: 11:18 AM</p>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900">Status Distribution</h3>
+                          <p className="text-xs text-slate-500">Active queue breakdown</p>
+                        </div>
+                        <p className="text-[10px] font-medium text-emerald-600 flex items-center gap-1">
+                          <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          Live sync
+                        </p>
                       </div>
                       <div className="flex items-center gap-8 h-[100px]">
                         <div className="relative size-[90px] shrink-0">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
-                                data={statusChartData}
+                                data={statusChartData.filter((s) => s.count > 0).length > 0 ? statusChartData.filter((s) => s.count > 0) : [{ name: 'None', count: 1, color: '#e2e8f0' }]}
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={25}
@@ -651,7 +657,7 @@ export const AdminControlCenter: React.FC = () => {
                                 dataKey="count"
                                 stroke="none"
                               >
-                                {statusChartData.map((entry, index) => (
+                                {(statusChartData.filter((s) => s.count > 0).length > 0 ? statusChartData.filter((s) => s.count > 0) : [{ name: 'None', count: 1, color: '#e2e8f0' }]).map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                               </Pie>
@@ -659,18 +665,31 @@ export const AdminControlCenter: React.FC = () => {
                           </ResponsiveContainer>
                         </div>
                         <div className="flex-1 flex flex-col gap-2">
-                           <div className="w-full h-8 flex rounded overflow-hidden">
-                              <div className="bg-sky-400 w-[20%] flex items-center justify-center text-[10px] font-bold text-white">1</div>
-                              <div className="bg-amber-400 w-[20%] flex items-center justify-center text-[10px] font-bold text-white">1</div>
-                              <div className="bg-rose-500 w-[40%] flex items-center justify-center text-[10px] font-bold text-white">2</div>
-                              <div className="bg-emerald-500 w-[20%] flex items-center justify-center text-[10px] font-bold text-white">1</div>
+                           <div className="w-full h-8 flex rounded overflow-hidden bg-slate-100">
+                             {totalTickets > 0 && statusChartData.some((s) => s.count > 0) ? (
+                               statusChartData
+                                 .filter((s) => s.count > 0)
+                                 .map((s) => (
+                                   <div
+                                     key={s.key}
+                                     style={{ width: `${s.percentage}%`, backgroundColor: s.color }}
+                                     className="flex items-center justify-center text-[10px] font-bold text-white transition-all overflow-hidden px-1"
+                                     title={`${s.name}: ${s.count} (${Math.round(s.percentage)}%)`}
+                                   >
+                                     {s.count}
+                                   </div>
+                                 ))
+                             ) : (
+                               <div className="w-full flex items-center justify-center text-xs text-slate-400">No tickets in system</div>
+                             )}
                            </div>
-                           <div className="flex items-center justify-between mt-1 px-1">
-                              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-600"><div className="size-2 rounded-full bg-sky-400"></div>New</div>
-                              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-600"><div className="size-2 rounded-full bg-amber-400"></div>Assigned</div>
-                              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-600"><div className="size-2 rounded-full bg-rose-500"></div>In Progress</div>
-                              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-600"><div className="size-2 rounded-full bg-emerald-500"></div>Resolved</div>
-                              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-600"><div className="size-2 rounded-full bg-slate-500"></div>Closed</div>
+                           <div className="flex flex-wrap items-center justify-between mt-1 px-1 gap-y-1 gap-x-2">
+                             {statusChartData.map((s) => (
+                               <div key={s.key} className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-600">
+                                 <div className="size-2 rounded-full shrink-0" style={{ backgroundColor: s.color }}></div>
+                                 <span>{s.name} ({s.count})</span>
+                               </div>
+                             ))}
                            </div>
                         </div>
                       </div>

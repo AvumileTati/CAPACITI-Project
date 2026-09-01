@@ -96,7 +96,7 @@ export const CustomerPortal: React.FC = () => {
   return (
     <div id="customer-portal" className="min-h-screen bg-[#edf5fd] text-slate-900 flex flex-col font-sans">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-700/50 bg-[#0f3b6c] text-white shadow-md">
+      <header className="sticky top-0 z-30 border-b border-slate-700/50 bg-[#1a4043] text-white shadow-md">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           {/* Logo & Brand */}
           <div className="flex items-center gap-3">
@@ -301,24 +301,24 @@ export const CustomerPortal: React.FC = () => {
                     setPreselectedCategory(undefined);
                     setIsNewTicketOpen(true);
                   }}
-                  className="sm:col-span-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-2xl p-5 flex flex-col justify-center items-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                  className="sm:col-span-2 bg-[#1a4043] hover:bg-[#143235] text-white rounded-2xl p-5 flex flex-col justify-center items-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                 >
                   <Plus className="size-6 stroke-[2.5] text-white group-hover:scale-110 transition-transform" />
                   <span className="font-bold text-sm text-white">Other Request</span>
                 </button>
                 
-                <div className="sm:col-span-3 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white flex items-center justify-between relative overflow-hidden shadow-sm">
-                  <div className="absolute right-0 top-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
-                  <div className="absolute left-0 bottom-0 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl -ml-5 -mb-5"></div>
+                <div className="sm:col-span-3 bg-[#1a4043] hover:bg-[#143235] transition-colors rounded-2xl p-5 text-white flex items-center justify-between relative overflow-hidden shadow-sm">
+                  <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                  <div className="absolute left-0 bottom-0 w-24 h-24 bg-teal-300/15 rounded-full blur-2xl -ml-5 -mb-5"></div>
                   <div className="relative z-10 space-y-1">
                     <h3 className="font-bold text-white flex items-center gap-2">
-                      <Sparkles className="size-4 text-blue-400" /> AI Triage Active
+                      <Sparkles className="size-4 text-teal-200" /> AI Triage Active
                     </h3>
-                    <p className="text-xs text-slate-300 leading-relaxed max-w-[200px] sm:max-w-[250px]">
+                    <p className="text-xs text-teal-100 leading-relaxed max-w-[200px] sm:max-w-[250px]">
                       Your requests are instantly analyzed and routed by Gemini to the fastest available agent.
                     </p>
                   </div>
-                  <div className="relative z-10 shrink-0 text-white/40">
+                  <div className="relative z-10 shrink-0 text-white/30">
                     <Bot className="size-12 sm:size-16" />
                   </div>
                 </div>
