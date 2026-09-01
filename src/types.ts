@@ -47,17 +47,7 @@ export type TicketStatus =
   | 'resolved'
   | 'closed';
 
-
-export interface Attachment {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  url: string; // Could be data URL or remote URL
-}
-
 export interface Ticket {
-  attachments?: Attachment[];
   id: string;
   title: string;
   description: string;
@@ -88,7 +78,6 @@ export interface TicketMessage {
   body: string;
   internal: boolean;
   created_at: string;
-  attachments?: Attachment[];
 }
 
 export interface EmailOutboxItem {
