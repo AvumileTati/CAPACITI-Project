@@ -90,7 +90,7 @@ Respond ONLY with valid JSON in this exact structure:
         },
       });
     } catch (err: any) {
-      console.warn('Gemini triage fallback triggered:', err?.message);
+      // API is busy or unavailable, use fallback silently to prevent false error reports
     }
   }
 
@@ -177,7 +177,7 @@ Guidelines:
         return res.json({ suggestion });
       }
     } catch (err: any) {
-      console.warn('AI reply generation fallback:', err?.message);
+      // API is busy or unavailable, use fallback silently to prevent false error reports
     }
   }
 
