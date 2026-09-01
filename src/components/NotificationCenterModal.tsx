@@ -167,31 +167,33 @@ export const NotificationCenterModal: React.FC<NotificationCenterModalProps> = (
               <div
                 key={notif.id}
                 onClick={() => handleNotificationClick(notif)}
-                className={`p-3.5 rounded-xl transition-all cursor-pointer flex items-start gap-3 ${
+                className={`p-3.5 mb-1 rounded-xl transition-all cursor-pointer flex items-start gap-3 ${
                   notif.read
-                    ? 'hover:bg-slate-800/40 text-slate-300 opacity-80'
-                    : 'bg-cyan-950/20 border border-cyan-500/20 hover:bg-cyan-950/40 text-white'
+                    ? 'hover:bg-slate-800/40 opacity-70 border border-transparent'
+                    : 'bg-slate-800/50 border border-slate-700 hover:bg-slate-700/50 shadow-sm'
                 }`}
               >
-                <div className="size-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+                <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border ${
+                  notif.read ? 'bg-slate-800/80 border-slate-700/50' : 'bg-slate-700/50 border-slate-600/50'
+                }`}>
                   {getIconForType(notif.type)}
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-xs font-bold text-white truncate">{notif.title}</h4>
-                    <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                    <h4 className={`text-sm font-bold truncate ${notif.read ? 'text-slate-300' : 'text-white'}`}>{notif.title}</h4>
+                    <span className={`text-[10px] whitespace-nowrap ${notif.read ? 'text-slate-500' : 'text-slate-400'}`}>
                       {new Date(notif.created_at).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{notif.message}</p>
+                  <p className={`text-xs mt-1 leading-relaxed ${notif.read ? 'text-slate-400' : 'text-slate-200'}`}>{notif.message}</p>
                 </div>
 
                 {!notif.read && (
-                  <span className="size-2 rounded-full bg-cyan-400 shrink-0 mt-1.5 shadow-sm shadow-cyan-400" />
+                  <span className="size-2.5 rounded-full bg-cyan-400 shrink-0 mt-1.5 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
                 )}
               </div>
             ))
