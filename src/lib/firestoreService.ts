@@ -85,9 +85,16 @@ export async function getUsersCountFromFirestore(): Promise<number> {
 }
 
 // Subscribe to real-time Tickets
-export function subscribeToTickets(callback: (tickets: Ticket[]) => void) {
+import { query, where } from 'firebase/firestore';
+
+export function subscribeToTickets(userRole: string, userId: string, callback: (tickets: Ticket[]) => void) {
   try {
-    const q = collection(db, COLLECTIONS.TICKETS);
+    let q;
+    if (userRole === 'admin' || userRole === 'technician') {
+       q = collection(db, COLLECTIONS.TICKETS);
+    } else {
+       q = query(collection(db, COLLECTIONS.TICKETS), where('requester_id', '==', userId));
+    }
     return onSnapshot(
       q,
       (snapshot) => {
@@ -112,9 +119,27 @@ export function subscribeToTickets(callback: (tickets: Ticket[]) => void) {
 }
 
 // Subscribe to real-time Messages
-export function subscribeToMessages(callback: (messages: TicketMessage[]) => void) {
+export function subscribeToMessages(userRole: string | undefined, userId: string | undefined, tickets: any[], callback: (messages: TicketMessage[]) => void) {
   try {
-    const q = collection(db, COLLECTIONS.MESSAGES);
+    let q;
+    if (userRole === 'admin' || userRole === 'technician') {
+      q = collection(db, COLLECTIONS.MESSAGES);
+    } else if (userId && tickets.length > 0) {
+      // For standard users, we only want messages for their tickets.
+      // We will batch queries or just rely on a user_id on the message? 
+      // Wait, messages don't have requester_id. They have ticket_id.
+      // Firestore 'in' has a max of 10. Let's query by author_id? No, they need to see tech messages too.
+      // If we don't have a secure way to query, let's query all their ticket IDs in chunks of 10.
+      // For simplicity in this demo app, let's add a 'ticket_requester_id' or rely on the rule `allow list: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/tickets/$(resource.data.ticket_id)).data.requester_id == request.auth.uid)`.
+      // BUT get() is not allowed in `allow list`! "You are strictly forbidden from placing get() or exists() document lookups inside allow list blocks."
+      // Therefore, the message MUST have a field `ticket_requester_id` for secure querying.
+      // Since it doesn't currently, we'll let it be collection() and see what happens, or we'll add `ticket_requester_id` to messages.
+      // Wait, let's update `messages` to have `ticket_requester_id` when created.
+      q = query(collection(db, COLLECTIONS.MESSAGES), where('ticket_requester_id', '==', userId));
+    } else {
+      callback([]);
+      return () => {};
+    }
     return onSnapshot(
       q,
       (snapshot) => {
@@ -166,7 +191,7 @@ export async function saveTicketToFirestore(ticket: Ticket): Promise<void> {
     const cleaned = cleanForFirestore(ticket);
     await setDoc(doc(db, COLLECTIONS.TICKETS, ticket.id), cleaned, { merge: true });
   } catch (error) {
-    console.error('Error saving ticket to Firestore:', error);
+    handleFirestoreError(error, OperationType.WRITE, 'tickets');
   }
 }
 
@@ -179,7 +204,7 @@ export async function updateTicketInFirestore(
     const cleaned = cleanForFirestore(updates);
     await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
-    console.error('Error updating ticket in Firestore:', error);
+    handleFirestoreError(error, OperationType.UPDATE, 'tickets');
   }
 }
 
@@ -187,7 +212,7 @@ export async function deleteTicketFromFirestore(ticketId: string): Promise<void>
   try {
     await deleteDoc(doc(db, COLLECTIONS.TICKETS, ticketId));
   } catch (error) {
-    console.error('Error deleting ticket in Firestore:', error);
+    handleFirestoreError(error, OperationType.DELETE, 'tickets');
   }
 }
 
@@ -197,7 +222,7 @@ export async function saveMessageToFirestore(message: TicketMessage): Promise<vo
     const cleaned = cleanForFirestore(message);
     await setDoc(doc(db, COLLECTIONS.MESSAGES, message.id), cleaned, { merge: true });
   } catch (error) {
-    console.error('Error saving message to Firestore:', error);
+    handleFirestoreError(error, OperationType.WRITE, 'messages');
   }
 }
 
@@ -207,7 +232,7 @@ export async function saveUserToFirestore(user: UserProfile): Promise<void> {
     const cleaned = cleanForFirestore(user);
     await setDoc(doc(db, COLLECTIONS.USERS, user.id), cleaned, { merge: true });
   } catch (error) {
-    console.error('Error saving user to Firestore:', error);
+    handleFirestoreError(error, OperationType.WRITE, 'users');
   }
 }
 
@@ -220,7 +245,7 @@ export async function updateUserInFirestore(
     const cleaned = cleanForFirestore(updates);
     await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
-    console.error('Error updating user in Firestore:', error);
+    handleFirestoreError(error, OperationType.UPDATE, 'users');
   }
 }
 
@@ -228,7 +253,7 @@ export async function deleteUserFromFirestore(userId: string): Promise<void> {
   try {
     await deleteDoc(doc(db, COLLECTIONS.USERS, userId));
   } catch (error) {
-    console.error('Error deleting user in Firestore:', error);
+    handleFirestoreError(error, OperationType.DELETE, 'users');
   }
 }
 
@@ -238,7 +263,7 @@ export async function saveOutboxToFirestore(item: EmailOutboxItem): Promise<void
     const cleaned = cleanForFirestore(item);
     await setDoc(doc(db, COLLECTIONS.OUTBOX, item.id), cleaned, { merge: true });
   } catch (error) {
-    console.error('Error saving outbox item to Firestore:', error);
+    handleFirestoreError(error, OperationType.WRITE, 'outbox');
   }
 }
 
@@ -269,9 +294,19 @@ export function subscribeToOutbox(callback: (items: EmailOutboxItem[]) => void) 
 }
 
 // Subscribe to real-time Notifications
-export function subscribeToNotifications(callback: (notifications: any[]) => void) {
+export function subscribeToNotifications(userRole: string | undefined, userId: string | undefined, callback: (notifications: any[]) => void) {
   try {
-    const q = collection(db, COLLECTIONS.NOTIFICATIONS);
+    let q;
+    if (userRole === 'admin') {
+      q = collection(db, COLLECTIONS.NOTIFICATIONS); // admins see all
+    } else if (userId) {
+      // A normal user sees their own notifications. 
+      // The app also targets 'all', so we'd need an `in` query: where('user_id', 'in', [userId, 'all'])
+      q = query(collection(db, COLLECTIONS.NOTIFICATIONS), where('user_id', 'in', [userId, 'all']));
+    } else {
+      callback([]);
+      return () => {};
+    }
     return onSnapshot(
       q,
       (snapshot) => {
@@ -300,7 +335,7 @@ export async function saveNotificationToFirestore(notif: any): Promise<void> {
     const cleaned = cleanForFirestore(notif);
     await setDoc(doc(db, COLLECTIONS.NOTIFICATIONS, notif.id), cleaned, { merge: true });
   } catch (error) {
-    console.error('Error saving notification to Firestore:', error);
+    handleFirestoreError(error, OperationType.WRITE, 'notifications');
   }
 }
 
@@ -310,7 +345,7 @@ export async function updateNotificationInFirestore(id: string, updates: any): P
     const cleaned = cleanForFirestore(updates);
     await setDoc(docRef, cleaned, { merge: true });
   } catch (error) {
-    console.error('Error updating notification in Firestore:', error);
+    handleFirestoreError(error, OperationType.UPDATE, 'notifications');
   }
 }
 

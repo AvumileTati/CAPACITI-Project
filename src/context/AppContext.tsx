@@ -201,11 +201,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     initializeFirestoreDatabase();
 
-    const unsubTickets = subscribeToTickets((realTickets) => {
+    const unsubTickets = subscribeToTickets(currentUser?.role, currentUser?.id, (realTickets) => {
       setTickets(realTickets || []);
     });
 
-    const unsubMessages = subscribeToMessages((realMessages) => {
+    const unsubMessages = subscribeToMessages(currentUser?.role, currentUser?.id, tickets, (realMessages) => {
       setMessages(realMessages || []);
     });
 
@@ -228,7 +228,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setOutbox(realOutbox || []);
     });
 
-    const unsubNotifs = subscribeToNotifications((realNotifs) => {
+    const unsubNotifs = subscribeToNotifications(currentUser?.role, currentUser?.id, (realNotifs) => {
       setNotifications(realNotifs || []);
       // Chime if new unread notification arrived
       if (realNotifs && realNotifs.length > prevNotifsLengthRef.current) {

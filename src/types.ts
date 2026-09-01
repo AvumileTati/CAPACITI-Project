@@ -82,6 +82,7 @@ export interface Ticket {
 export interface TicketMessage {
   id: string;
   ticket_id: string;
+  ticket_requester_id?: string;
   author_id: string;
   author_name: string;
   author_role: UserRole;
