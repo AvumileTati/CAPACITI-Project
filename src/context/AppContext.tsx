@@ -146,7 +146,11 @@ const playChimeSound = () => {
 };
 
 // Designated Administrator Email from workspace
-export const isDesignatedAdminEmail = (email?: string | null): boolean => { return false; };
+export const DESIGNATED_ADMIN_EMAILS = ['tatiavumile@gmail.com'];
+export const isDesignatedAdminEmail = (email?: string | null): boolean => {
+  if (!email) return false;
+  return DESIGNATED_ADMIN_EMAILS.includes(email.trim().toLowerCase());
+};
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<UserProfile[]>(INITIAL_USERS);
@@ -818,16 +822,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       let existing = users.find((u) => u.id === uid || u.email.toLowerCase() === email.toLowerCase());
       
-      // If user is designated admin but profile doesn't exist yet, automatically generate it
-      if (!existing && isDesignated) {
-        const adminUid = uid;
+      if (!existing) {
+        // User exists in Firebase Auth but not in Firestore (e.g. after DB wipe)
+        const count = await getUsersCountFromFirestore();
+        const isFirstUser = count === 0;
+        
         existing = {
-          id: adminUid,
+          id: uid,
           email: email,
           full_name: email.split('@')[0],
-          company: 'TechnoResolve IT Administration',
-          role: 'admin',
-          is_approved: true,
+          role: isFirstUser ? 'admin' : 'user',
+          is_approved: isFirstUser,
           email_verified: true,
           banned: false,
           created_at: new Date().toISOString(),
