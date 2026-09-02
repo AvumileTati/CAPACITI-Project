@@ -1,12 +1,12 @@
 {
-  "projectId": "neural-structure-06g4b",
-  "appId": "1:723440992646:web:33c6fd431899afb8426c07",
-  "apiKey": "AIzaSyBgD3A59_uTmbqQbRA-Dy1eCuIOXbeeAi4",
-  "authDomain": "neural-structure-06g4b.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-technoresolvedes-32f8b911-de2e-4428-b8c4-40eb5bf4115a",
-  "storageBucket": "neural-structure-06g4b.firebasestorage.app",
-  "messagingSenderId": "723440992646",
-  "measurementId": "",
-  "oAuthClientId": "723440992646-qafdp1hg870qqm9nej9a7dpe17o1bep6.apps.googleusercontent.com",
+  "projectId": "capaciti-project-a3d4a",
+  "appId": "1:245240955510:web:0de672921ef5f621a69557",
+  "apiKey": "AIzaSyCOmkf6k0D6SmEsfMRDSRw4Y3cnY3ccFr8",
+  "authDomain": "capaciti-project-a3d4a.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "capaciti-project-a3d4a.firebasestorage.app",
+  "messagingSenderId": "245240955510",
+  "measurementId": "G-ZLF3GW6Q7F",
+  "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }

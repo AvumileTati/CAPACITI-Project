@@ -31,11 +31,12 @@ import {
   updateNotificationInFirestore,
   purgeAllFirestoreData,
 } from '../lib/firestoreService';
-import { auth, } from '../lib/firebase';
+import { auth, db, googleProvider } from '../lib/firebase';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
     signOut as fbSignOut,
+  signInWithPopup,
 } from 'firebase/auth';
 
 export interface ToastItem {
@@ -79,6 +80,7 @@ interface AppContextType {
   markNotificationAsRead: (id: string) => Promise<void>;
   markAllNotificationsAsRead: () => Promise<void>;
   signIn: (email: string, password?: string) => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
   signUp: (data: {
     email: string;
     password?: string;
@@ -885,6 +887,116 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Google Sign-In with Firebase Auth
+  const signInWithGoogle = async (): Promise<boolean> => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const fbUser = result.user;
+      if (!fbUser || !fbUser.email) {
+        showToast('Google Sign-In failed: No email retrieved from Google account.', 'error');
+        return false;
+      }
+
+      const email = fbUser.email;
+      const displayName = fbUser.displayName || (isDesignatedAdminEmail(email) ? 'Philibane Awonke' : email.split('@')[0]);
+      const photoURL = fbUser.photoURL || undefined;
+      const isDesignated = isDesignatedAdminEmail(email);
+
+      let existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase() || u.id === fbUser.uid);
+      if (existing) {
+        if (existing.banned) {
+          showToast('This account has been suspended by an administrator.', 'error');
+          return false;
+        }
+        if (photoURL && !existing.avatar_url) {
+          await updateUserInFirestore(existing.id, { avatar_url: photoURL });
+        }
+        // Promote designated user to admin
+        if (isDesignated && (existing.role !== 'admin' || !existing.is_approved || !existing.email_verified)) {
+          existing = {
+            ...existing,
+            role: 'admin',
+            is_approved: true,
+            email_verified: true,
+          };
+          setUsers((prev) => prev.map((u) => u.id === existing!.id ? existing! : u));
+          updateUserInFirestore(existing.id, { role: 'admin', is_approved: true, email_verified: true });
+        }
+        setCurrentUser(existing);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
+        setViewRoleState(existing.role);
+        localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, existing.role);
+        setActivePage('dashboard');
+        
+        if (!existing.email_verified && existing.role !== 'admin') {
+           return true; 
+        }
+        
+        showToast(`Welcome back, ${existing.full_name}! (${existing.role.toUpperCase()})`, 'success');
+        return true;
+      }
+
+      const isFirstUser = users.length === 0;
+      const assignedRole: UserRole = (isFirstUser || isDesignated) ? 'admin' : 'user';
+
+      const newUser: UserProfile = {
+        id: fbUser.uid,
+        email: email,
+        full_name: displayName,
+        company: isDesignated ? 'TechnoResolve IT Administration' : 'Google Workspace User',
+        role: assignedRole,
+        is_approved: isFirstUser || isDesignated,
+        email_verified: true,
+        avatar_url: photoURL,
+        banned: false,
+        created_at: new Date().toISOString(),
+      };
+
+      setUsers((prev) => [...prev, newUser]);
+      await saveUserToFirestore(newUser);
+
+      if (!isFirstUser && !isDesignated) {
+        const adminNotif: AppNotification = {
+          id: `notif-${Date.now()}`,
+          user_id: 'admin',
+          title: 'New Google User Approval Required',
+          message: `${displayName} (${email}) requested access via Google and requires approval.`,
+          type: 'approval',
+          read: false,
+          created_at: new Date().toISOString(),
+          target_id: newUser.id,
+          link_page: 'users',
+        };
+        setNotifications((prev) => [adminNotif, ...prev]);
+        saveNotificationToFirestore(adminNotif);
+      }
+
+      setCurrentUser(newUser);
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
+      setViewRoleState(assignedRole);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, assignedRole);
+      setActivePage('dashboard');
+
+      if (isFirstUser || isDesignated) {
+        showToast('👑 Welcome! Granted full Administrator access.', 'success');
+      } else {
+        showToast(`Welcome ${displayName}! Google authentication verified.`, 'success');
+      }
+      return true;
+    } catch (err: any) {
+      if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+        return false;
+      }
+      console.warn('Google Sign-In error:', err?.code, err?.message);
+      if (err?.code === 'auth/operation-not-allowed') {
+        showToast('Google Sign-In is disabled. Please enable it in the Firebase Console.', 'error');
+      } else {
+        showToast(`Google Sign-In: ${err?.message || 'Authentication was interrupted.'}`, 'error');
+      }
+      return false;
+    }
+  };
+
   // Sign Up with First Admin Guarantee, Designated Admin Upgrade, Email Confirmation & Admin Approval requirement
   const signUp = async (data: {
     email: string;
@@ -1051,6 +1163,7 @@ Once verified, an administrator will review and activate your account access.`,
         markNotificationAsRead,
         markAllNotificationsAsRead,
         signIn,
+        signInWithGoogle,
         signUp,
         signOut,
         switchDemoUser,
