@@ -122,9 +122,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
             <ArrowLeft className="size-4" />
             <span>Back to website</span>
           </button>
-        )}
+        
 
-        <div className="max-w-md w-full mx-auto">
+        
+        )}<div className="max-w-md w-full mx-auto">
           {/* Header */}
           <div className="mb-8">
             <h2 className="text-3xl font-extrabold text-slate-900 font-display mb-2">
@@ -177,8 +178,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
                     </div>
                   </div>
                 </motion.div>
-              )}
-            </AnimatePresence>
+              
+            
+              )}</AnimatePresence>
 
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700">Email Address</label>
@@ -230,8 +232,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
                   <span>{mode === 'signin' ? 'Sign In' : 'Create Account'}</span>
                   <ArrowRight className="size-4" />
                 </>
-              )}
-            </button>
+              
+            
+              )}</button>
           </form>
 
 
@@ -271,7 +274,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
           </button>
 
           {/* Toggle Mode */}
-          {!isSystemEmpty && (
+          
             <p className="mt-8 text-center text-sm font-medium text-slate-600">
               {mode === 'signin' ? "Don't have an account? " : "Already have an account? "}
               <button
@@ -282,7 +285,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
                 {mode === 'signin' ? 'Sign up' : 'Sign in'}
               </button>
             </p>
-          )}
+          
 
         </div>
       </div>
