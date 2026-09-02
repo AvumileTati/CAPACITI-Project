@@ -26,7 +26,7 @@ export const LandingPage: React.FC<{
   onOpenAuth: () => void;
   onOpenNewTicket: () => void;
 }> = ({ onOpenAuth, onOpenNewTicket }) => {
-  const { tickets } = useApp();
+  const { tickets, currentUser, setActivePage } = useApp();
 
   const totalTickets = tickets.length;
   const openTickets = tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed').length;
@@ -55,10 +55,10 @@ export const LandingPage: React.FC<{
         <div className="flex items-center gap-3 md:gap-4">
           <button
             id="landing-signin-btn"
-            onClick={onOpenAuth}
+            onClick={() => currentUser ? setActivePage('dashboard') : onOpenAuth()}
             className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[#123333] transition-all hover:bg-slate-100 shadow-sm cursor-pointer"
           >
-            Sign in
+            {currentUser ? 'Dashboard' : 'Sign in'}
           </button>
         </div>
       </header>
@@ -355,7 +355,7 @@ export const LandingPage: React.FC<{
 
               <div className="mt-8 pt-6 border-t border-white/10">
                 <button
-                  onClick={onOpenAuth}
+                  onClick={() => currentUser ? setActivePage('dashboard') : onOpenAuth()}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#123333] hover:bg-[#1a4444] border border-purple-500/40 text-purple-300 text-xs font-bold transition-all cursor-pointer"
                 >
                   <SlidersHorizontal className="size-4" />
@@ -413,7 +413,7 @@ export const LandingPage: React.FC<{
 
               <div className="mt-8 pt-6 border-t border-white/10">
                 <button
-                  onClick={onOpenAuth}
+                  onClick={() => currentUser ? setActivePage('dashboard') : onOpenAuth()}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#123333] hover:bg-[#1a4444] border border-rose-500/40 text-rose-300 text-xs font-bold transition-all cursor-pointer"
                 >
                   <BarChart3 className="size-4" />
@@ -494,11 +494,11 @@ export const LandingPage: React.FC<{
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <button
                 id="cta-launch-desk-btn"
-                onClick={onOpenAuth}
+                onClick={() => currentUser ? setActivePage('dashboard') : onOpenAuth()}
                 style={{ backgroundColor: '#ffffff', color: '#123333' }}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-bold transition-all hover:bg-slate-100 shadow-md cursor-pointer"
               >
-                <span>Launch Desk</span>
+                <span>{currentUser ? 'Open Dashboard' : 'Launch Desk'}</span>
                 <ArrowRight className="size-4 text-[#123333]" />
               </button>
               <button

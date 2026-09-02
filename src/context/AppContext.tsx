@@ -170,7 +170,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : {};
   });
 
-  const [activePage, setActivePage] = useState<string>('login');
+  const [activePage, setActivePage] = useState<string>('landing');
   const [isAIClassifying, setIsAIClassifying] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [notificationToast, setNotificationToast] = useState<ToastItem | null>(null);
