@@ -172,7 +172,7 @@ export function subscribeToMessages(userRole: string | undefined, userId: string
       // Therefore, the message MUST have a field `ticket_requester_id` for secure querying.
       // Since it doesn't currently, we'll let it be collection() and see what happens, or we'll add `ticket_requester_id` to messages.
       // Wait, let's update `messages` to have `ticket_requester_id` when created.
-      q = query(collection(db, COLLECTIONS.MESSAGES), where('ticket_requester_id', '==', userId));
+      q = query(collection(db, COLLECTIONS.MESSAGES), where('ticket_requester_id', '==', userId), where('internal', '==', false));
     } else {
       callback([]);
       return () => {};
