@@ -11,12 +11,12 @@ service cloud.firestore {
     function existing() { return resource.data; }
     
     function isDesignatedAdmin() {
-      return isSignedIn() && request.auth.token.email != null && request.auth.token.email.lower() == 'tatiavumile@gmail.com';
+      return isSignedIn() && request.auth.token.email != null && request.auth.token.email == 'tatiavumile@gmail.com';
     }
 
     // RBAC: Roles are stored in /users/{userId}
     function getRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : 'user';
     }
     function isAdmin() {
       return isSignedIn() && getRole() == 'admin';

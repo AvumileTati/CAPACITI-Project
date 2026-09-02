@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import { LandingPage } from './components/LandingPage';
-import { CustomerPortal } from './components/CustomerPortal';
-import { TechnicianWorkspace } from './components/TechnicianWorkspace';
-import { AdminControlCenter } from './components/AdminControlCenter';
-import { LoginPage } from './components/LoginPage';
-import { AuthModal } from './components/AuthModal';
-import { NewTicketModal } from './components/NewTicketModal';
-import { EmailVerificationView } from './components/EmailVerificationView';
-import { PendingApprovalView } from './components/PendingApprovalView';
-import { NotificationCenterModal } from './components/NotificationCenterModal';
-import { EmailOutboxModal } from './components/EmailOutboxModal';
-import { CheckCircle2, AlertCircle, Info, X, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info, X, ShieldAlert, ArrowLeft, Loader2 } from 'lucide-react';
+
+// Lazy loaded components for code-splitting
+const LandingPage = lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
+const CustomerPortal = lazy(() => import('./components/CustomerPortal').then(module => ({ default: module.CustomerPortal })));
+const TechnicianWorkspace = lazy(() => import('./components/TechnicianWorkspace').then(module => ({ default: module.TechnicianWorkspace })));
+const AdminControlCenter = lazy(() => import('./components/AdminControlCenter').then(module => ({ default: module.AdminControlCenter })));
+const LoginPage = lazy(() => import('./components/LoginPage').then(module => ({ default: module.LoginPage })));
+const AuthModal = lazy(() => import('./components/AuthModal').then(module => ({ default: module.AuthModal })));
+const NewTicketModal = lazy(() => import('./components/NewTicketModal').then(module => ({ default: module.NewTicketModal })));
+const EmailVerificationView = lazy(() => import('./components/EmailVerificationView').then(module => ({ default: module.EmailVerificationView })));
+const PendingApprovalView = lazy(() => import('./components/PendingApprovalView').then(module => ({ default: module.PendingApprovalView })));
+const NotificationCenterModal = lazy(() => import('./components/NotificationCenterModal').then(module => ({ default: module.NotificationCenterModal })));
+const EmailOutboxModal = lazy(() => import('./components/EmailOutboxModal').then(module => ({ default: module.EmailOutboxModal })));
+
+const LoadingFallback: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-50/50">
+    <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+  </div>
+);
 
 const ToastContainer: React.FC = () => {
   const { toasts = [], dismissToast } = useApp();
@@ -203,7 +211,9 @@ const MainContent: React.FC = () => {
 export default function App() {
   return (
     <AppProvider>
-      <MainContent />
+      <Suspense fallback={<LoadingFallback />}>
+        <MainContent />
+      </Suspense>
     </AppProvider>
   );
 }

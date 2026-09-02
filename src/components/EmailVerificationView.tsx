@@ -100,35 +100,7 @@ export const EmailVerificationView: React.FC = () => {
             </p>
           </div>
 
-          {/* Quick simulation helper badge */}
-          {currentUser?.verification_code && (
-            <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/40 p-3.5 text-xs text-cyan-200 flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-[11px] uppercase tracking-wider text-cyan-400 flex items-center gap-1">
-                  <KeyRound className="size-3.5" /> Outbox Verification Code
-                </span>
-                <button
-                  type="button"
-                  onClick={handleAutoFill}
-                  className="text-[11px] font-bold text-cyan-300 hover:underline cursor-pointer bg-cyan-500/20 px-2 py-0.5 rounded"
-                >
-                  Auto-fill code
-                </button>
-              </div>
-              <div className="flex items-center justify-between bg-[#060f1e] px-3 py-2 rounded-lg border border-cyan-900/50">
-                <span className="font-mono text-base font-extrabold tracking-widest text-white">
-                  {currentUser.verification_code}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsOutboxOpen(true)}
-                  className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white"
-                >
-                  <Inbox className="size-3" /> View Outbox
-                </button>
-              </div>
-            </div>
-          )}
+
 
           {errorMsg && (
             <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-950/50 p-3 text-xs text-rose-300">
