@@ -672,7 +672,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateUserStatus = async (
     userId: string,
-    updates: { is_approved?: boolean; banned?: boolean; rejected?: boolean }
+    updates: Partial<UserProfile>
   ) => {
     if (!isAdmin) {
       showToast('Unauthorized: Only administrators can modify account approvals or status.', 'error');
@@ -683,13 +683,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await updateUserInFirestore(userId, updates);
 
     const targetUser = users.find((u) => u.id === userId);
+    const updatedUserRole = updates.role || targetUser?.role || 'user';
+    const roleLabel = updatedUserRole === 'admin' ? 'Administrator' : updatedUserRole === 'technician' ? 'Support Technician' : 'Customer';
+
     if (targetUser) {
       if (updates.is_approved) {
         const approveNotif: AppNotification = {
           id: `notif-${Date.now()}`,
           user_id: userId,
           title: 'Account Approved! 🎉',
-          message: 'Your TechnoResolve account has been approved by the Administrator. You now have full portal access.',
+          message: `Your TechnoResolve account has been approved by the Administrator as a ${roleLabel}. You now have access.`,
           type: 'approval',
           read: false,
           created_at: new Date().toISOString(),
@@ -701,11 +704,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const outItem: EmailOutboxItem = {
           id: `out-${Date.now()}`,
           to: targetUser.email,
-          subject: '[TechnoResolve] Account Approved by Administrator',
+          subject: `[TechnoResolve] Account Approved: ${roleLabel} Role Assigned`,
           template: 'account_approved',
           status: 'sent',
           created_at: new Date().toISOString(),
-          payload: `Hi ${targetUser.full_name},\n\nYour account has been reviewed and approved by our system administrator. You can now log in and access all authorized services.`,
+          payload: `Hi ${targetUser.full_name},\n\nYour registration request has been reviewed and approved by the System Administrator.\n\nAssigned Role: ${roleLabel.toUpperCase()}\n\nYou can now log in and access your workspace at any time.`,
         };
         setOutbox((prev) => [outItem, ...prev]);
         saveOutboxToFirestore(outItem);
@@ -715,7 +718,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(
       updates.is_approved !== undefined
         ? updates.is_approved
-          ? 'User approved successfully'
+          ? `User approved as ${roleLabel}`
           : 'User approval removed'
         : updates.banned
         ? 'User suspended'
@@ -736,7 +739,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updates: Partial<UserProfile> = {
       is_approved: true,
       rejected: false,
-      ...(role ? { role } : {}),
+      role: role || 'user',
     };
     await updateUserStatus(userId, updates);
   };

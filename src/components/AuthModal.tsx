@@ -190,7 +190,10 @@ export const AuthModal: React.FC<{
 
               {!isSystemEmpty && (
                 <label className="block">
-                  <span className="text-xs font-semibold text-foreground">Account Role</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold text-foreground">Requested Role</span>
+                    <span className="text-[10px] text-amber-600 font-medium">Assigned by Admin</span>
+                  </div>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value as UserRole)}
@@ -198,7 +201,11 @@ export const AuthModal: React.FC<{
                   >
                     <option value="user">Customer (Self Service)</option>
                     <option value="technician">Support Technician</option>
+                    <option value="admin">Administrator</option>
                   </select>
+                  <span className="text-[11px] text-muted-foreground block mt-1">
+                    Your account will be reviewed by an Administrator to approve and assign your role.
+                  </span>
                 </label>
               )}
             </>

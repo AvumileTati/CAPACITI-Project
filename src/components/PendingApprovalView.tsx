@@ -69,23 +69,23 @@ export const PendingApprovalView: React.FC = () => {
 
           <div className="text-center space-y-1.5">
             <h2 className="text-xl font-bold text-white tracking-tight">
-              {isRejected ? 'Registration Rejected' : 'Account Pending Admin Approval'}
+              {isRejected ? 'Registration Rejected' : 'Awaiting Administrator Approval'}
             </h2>
             <p className="text-xs text-slate-400 leading-relaxed">
               {isRejected
                 ? 'Your registration request was not approved by the system administrator.'
-                : 'Your email has been verified. A System Administrator must review and activate your account before you can access the service desk.'}
+                : 'Your email is verified. An Administrator will review your request, activate your account, and assign your operational workspace role (Customer, Technician, or Admin).'}
             </p>
           </div>
 
           {/* User profile recap */}
-          <div className="rounded-xl border border-[#142e56] bg-[#060f1e] p-4 space-y-2 text-xs">
+          <div className="rounded-xl border border-[#142e56] bg-[#060f1e] p-4 space-y-2.5 text-xs">
             <div className="flex items-center justify-between text-slate-400">
               <span>Full Name:</span>
               <span className="font-semibold text-white">{currentUser?.full_name}</span>
             </div>
             <div className="flex items-center justify-between text-slate-400">
-              <span>Email:</span>
+              <span>Work Email:</span>
               <span className="font-semibold text-white font-mono">{currentUser?.email}</span>
             </div>
             <div className="flex items-center justify-between text-slate-400">
@@ -93,20 +93,30 @@ export const PendingApprovalView: React.FC = () => {
               <span className="font-bold text-cyan-400 uppercase tracking-wider">{currentUser?.role}</span>
             </div>
             <div className="flex items-center justify-between text-slate-400 pt-1 border-t border-slate-800">
-              <span>Email Status:</span>
+              <span>Email Verification:</span>
               <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold">
                 <MailCheck className="size-3.5" /> Verified
               </span>
             </div>
             <div className="flex items-center justify-between text-slate-400">
-              <span>Admin Status:</span>
+              <span>Approval Status:</span>
               <span className={`inline-flex items-center gap-1 font-semibold ${isRejected ? 'text-rose-400' : 'text-amber-400'}`}>
-                {isRejected ? 'Rejected' : 'Under Review'}
+                {isRejected ? 'Rejected' : 'Pending Admin Role Assignment'}
               </span>
             </div>
           </div>
 
-          <div className="text-center pt-2">
+          <div className="rounded-xl border border-blue-500/20 bg-blue-950/30 p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-blue-300 font-medium">
+              <span className="size-2 rounded-full bg-blue-400 animate-pulse"></span>
+              <span>Live Firestore synchronization active</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              This window updates automatically as soon as an Admin approves your access.
+            </p>
+          </div>
+
+          <div className="text-center pt-1 space-y-2">
             <button
               onClick={() => signOut()}
               className="text-xs text-slate-400 hover:text-white underline cursor-pointer"

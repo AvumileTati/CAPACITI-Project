@@ -43,12 +43,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
   const isSystemEmpty = users.length === 0;
 
   const [mode, setMode] = useState<'signin' | 'signup'>(isSystemEmpty ? 'signup' : 'signin');
-  const [email, setEmail] = useState('philibaneawonke@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('Philibane Awonke');
-  const [company, setCompany] = useState('TechnoResolve IT Administration');
-  const [role, setRole] = useState<UserRole>('admin');
+  const [fullName, setFullName] = useState('');
+  const [company, setCompany] = useState('');
+  const [role, setRole] = useState<UserRole>('user');
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -330,17 +330,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
 
                 {!isSystemEmpty && (
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Account Role
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-slate-700">
+                        Requested Role
+                      </label>
+                      <span className="text-[10px] text-amber-700 font-medium">
+                        Admin assigns final role
+                      </span>
+                    </div>
                     <select
                       value={role}
                       onChange={(e) => setRole(e.target.value as UserRole)}
                       className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0f3b6c] transition-all"
                     >
-                      <option value="user">Customer / User (Self Service & Tickets)</option>
+                      <option value="user">Customer / End User (Self Service & Tickets)</option>
                       <option value="technician">Support Technician (Triage & Queues)</option>
+                      <option value="admin">Administrator (System Management)</option>
                     </select>
+                    <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">
+                      ℹ️ New accounts require approval from an Administrator, who will activate your profile and assign your workspace role.
+                    </p>
                   </div>
                 )}
               </>
