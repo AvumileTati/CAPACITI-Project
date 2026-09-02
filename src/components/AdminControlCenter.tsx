@@ -68,6 +68,7 @@ export const AdminControlCenter: React.FC = () => {
     showToast,
     setIsOutboxOpen,
     setIsNotificationCenterOpen,
+    purgeAllData,
   } = useApp();
 
   const [activeNav, setActiveNav] = useState<
@@ -734,6 +735,26 @@ export const AdminControlCenter: React.FC = () => {
                       </div>
                    </div>
                 </div>
+
+                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-red-900">Clear Database</p>
+                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
+                          purgeAllData();
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+                    >
+                      Clear Database
+                    </button>
+                  </div>
+                </div>
               </motion.div>
             )}
             {/* USER APPROVALS TAB */}
@@ -842,6 +863,26 @@ export const AdminControlCenter: React.FC = () => {
                         )}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-red-900">Clear Database</p>
+                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
+                          purgeAllData();
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+                    >
+                      Clear Database
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -970,6 +1011,26 @@ export const AdminControlCenter: React.FC = () => {
                     </table>
                   </div>
                 </div>
+
+                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-red-900">Clear Database</p>
+                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
+                          purgeAllData();
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+                    >
+                      Clear Database
+                    </button>
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -1074,6 +1135,26 @@ export const AdminControlCenter: React.FC = () => {
                     </table>
                   </div>
                 </div>
+
+                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-red-900">Clear Database</p>
+                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
+                          purgeAllData();
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+                    >
+                      Clear Database
+                    </button>
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -1175,6 +1256,26 @@ export const AdminControlCenter: React.FC = () => {
                     </table>
                   </div>
                 </div>
+
+                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-red-900">Clear Database</p>
+                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
+                          purgeAllData();
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+                    >
+                      Clear Database
+                    </button>
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -1226,6 +1327,26 @@ export const AdminControlCenter: React.FC = () => {
                     ))
                   )}
                 </div>
+
+                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-red-900">Clear Database</p>
+                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
+                          purgeAllData();
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+                    >
+                      Clear Database
+                    </button>
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -1248,6 +1369,26 @@ export const AdminControlCenter: React.FC = () => {
                   >
                     <Download className="size-4" /> Download Complete Report
                   </button>
+                </div>
+
+                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-red-900">Clear Database</p>
+                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
+                          purgeAllData();
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+                    >
+                      Clear Database
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -1284,6 +1425,26 @@ export const AdminControlCenter: React.FC = () => {
                         ENFORCED
                       </span>
                     </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-red-900">Clear Database</p>
+                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
+                          purgeAllData();
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+                    >
+                      Clear Database
+                    </button>
                   </div>
                 </div>
               </motion.div>

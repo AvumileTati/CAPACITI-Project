@@ -146,12 +146,7 @@ const playChimeSound = () => {
 };
 
 // Designated Administrator Email from workspace
-export const DESIGNATED_ADMIN_EMAIL = 'philibaneawonke@gmail.com';
-
-export const isDesignatedAdminEmail = (email?: string | null): boolean => {
-  if (!email) return false;
-  return email.trim().toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase();
-};
+export const isDesignatedAdminEmail = (email?: string | null): boolean => { return false; };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<UserProfile[]>(INITIAL_USERS);
@@ -828,8 +823,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const adminUid = uid;
         existing = {
           id: adminUid,
-          email: DESIGNATED_ADMIN_EMAIL,
-          full_name: 'Philibane Awonke',
+          email: email,
+          full_name: email.split('@')[0],
           company: 'TechnoResolve IT Administration',
           role: 'admin',
           is_approved: true,
