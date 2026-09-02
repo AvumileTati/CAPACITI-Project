@@ -16,6 +16,7 @@ import {
 } from '../data/seedData';
 import {
   initializeFirestoreDatabase,
+  getUsersCountFromFirestore,
   subscribeToTickets,
   subscribeToMessages,
   subscribeToUsers,
@@ -213,11 +214,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTickets(realTickets || []);
     });
 
-    const unsubMessages = subscribeToMessages(currentUser?.role, currentUser?.id, tickets, (realMessages) => {
+    const unsubMessages = subscribeToMessages(currentUser?.role, currentUser?.id, (realMessages) => {
       setMessages(realMessages || []);
     });
 
-    const unsubUsers = subscribeToUsers((realUsers) => {
+    const unsubUsers = subscribeToUsers(currentUser?.id, (realUsers) => {
       setUsers(realUsers || []);
       const savedId = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
       if (savedId) {
@@ -244,7 +245,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
-    const unsubOutbox = subscribeToOutbox((realOutbox) => {
+    const unsubOutbox = subscribeToOutbox(currentUser?.role, (realOutbox) => {
       setOutbox(realOutbox || []);
     });
 
@@ -267,7 +268,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       unsubOutbox();
       unsubNotifs();
     };
-  }, []);
+  }, [currentUser?.id, currentUser?.role]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.UNREAD, JSON.stringify(unreadCounts));
@@ -554,8 +555,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const sendMessage = async (ticketId: string, body: string, internal: boolean = false, attachments: any[] = []) => {
+    const targetTicket = tickets.find((t) => t.id === ticketId);
     const newMsg: TicketMessage = {
       id: `msg-${Date.now()}`,
+      ticket_requester_id: targetTicket?.requester_id || currentUser?.id || '',
       ticket_id: ticketId,
       author_id: currentUser?.id || 'sys-author',
       author_name: currentUser?.full_name || 'System User',
@@ -569,7 +572,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMessages((prev) => [...prev, newMsg]);
     await saveMessageToFirestore(newMsg);
 
-    const targetTicket = tickets.find((t) => t.id === ticketId);
     if (targetTicket) {
       const nextStatus =
         targetTicket.status === 'new' && (currentUser?.role === 'technician' || currentUser?.role === 'admin')
@@ -936,7 +938,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return true;
       }
 
-      const isFirstUser = users.length === 0;
+      const count = await getUsersCountFromFirestore();
+      const isFirstUser = count === 0;
       const assignedRole: UserRole = (isFirstUser || isDesignated) ? 'admin' : 'user';
 
       const newUser: UserProfile = {
@@ -1051,7 +1054,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false; // MUST fail early. Do NOT proceed to write to Firestore with a fake UID!
     }
 
-    const isFirstUser = users.length === 0;
+    const count = await getUsersCountFromFirestore();
+      const isFirstUser = count === 0;
     const assignedRole: UserRole = (isFirstUser || isDesignated) ? 'admin' : (data.role || 'user');
     const isAutoApproved = isFirstUser || isDesignated;
     const code = Math.floor(100000 + Math.random() * 900000).toString();

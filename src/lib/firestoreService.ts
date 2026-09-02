@@ -121,13 +121,16 @@ export async function getUsersCountFromFirestore(): Promise<number> {
 
 // Subscribe to real-time Tickets
 
-export function subscribeToTickets(userRole: string, userId: string, callback: (tickets: Ticket[]) => void) {
+export function subscribeToTickets(userRole: string | undefined, userId: string | undefined, callback: (tickets: Ticket[]) => void) {
   try {
     let q;
     if (userRole === 'admin' || userRole === 'technician') {
        q = collection(db, COLLECTIONS.TICKETS);
-    } else {
+    } else if (userId) {
        q = query(collection(db, COLLECTIONS.TICKETS), where('requester_id', '==', userId));
+    } else {
+       callback([]);
+       return () => {};
     }
     return onSnapshot(
       q,
@@ -153,12 +156,12 @@ export function subscribeToTickets(userRole: string, userId: string, callback: (
 }
 
 // Subscribe to real-time Messages
-export function subscribeToMessages(userRole: string | undefined, userId: string | undefined, tickets: any[], callback: (messages: TicketMessage[]) => void) {
+export function subscribeToMessages(userRole: string | undefined, userId: string | undefined, callback: (messages: TicketMessage[]) => void) {
   try {
     let q;
     if (userRole === 'admin' || userRole === 'technician') {
       q = collection(db, COLLECTIONS.MESSAGES);
-    } else if (userId && tickets.length > 0) {
+    } else if (userId) {
       // For standard users, we only want messages for their tickets.
       // We will batch queries or just rely on a user_id on the message? 
       // Wait, messages don't have requester_id. They have ticket_id.
@@ -197,8 +200,12 @@ export function subscribeToMessages(userRole: string | undefined, userId: string
 }
 
 // Subscribe to real-time Users
-export function subscribeToUsers(callback: (users: UserProfile[]) => void) {
+export function subscribeToUsers(userId: string | undefined, callback: (users: UserProfile[]) => void) {
   try {
+    if (!userId) {
+      callback([]);
+      return () => {};
+    }
     const q = collection(db, COLLECTIONS.USERS);
     return onSnapshot(
       q,
@@ -302,8 +309,12 @@ export async function saveOutboxToFirestore(item: EmailOutboxItem): Promise<void
 }
 
 // Subscribe to real-time Outbox
-export function subscribeToOutbox(callback: (items: EmailOutboxItem[]) => void) {
+export function subscribeToOutbox(userRole: string | undefined, callback: (items: EmailOutboxItem[]) => void) {
   try {
+    if (userRole !== 'admin') {
+      callback([]);
+      return () => {};
+    }
     const q = collection(db, COLLECTIONS.OUTBOX);
     return onSnapshot(
       q,
