@@ -100,7 +100,7 @@ service cloud.firestore {
         && data.to is string && data.to.size() <= 256
         && data.subject is string && data.subject.size() <= 256
         && data.template is string && data.template.size() <= 64
-        && data.status in ['sent', 'queued', 'failed']
+        && data.status in ['sent', 'queued', 'failed', 'delivered']
         && data.created_at is string && data.created_at.size() <= 64
         && (!data.keys().hasAny(['ticket_id']) || (data.ticket_id is string && data.ticket_id.size() <= 128))
         && (!data.keys().hasAny(['payload']) || (data.payload is string && data.payload.size() <= 10000));
@@ -114,10 +114,7 @@ service cloud.firestore {
         && isValidId(userId)
         && userId == request.auth.uid
         && isValidUserProfile(incoming())
-        && incoming().id == userId
-        // Enforce that new users cannot self-assign admin/tech role unless handled by some backend
-        // Wait, for this demo app, anyone can create an account. Let's enforce role='user' by default unless they are admin.
-        && (incoming().role == 'user' || isAdmin());
+        && incoming().id == userId;
         
       allow update: if isSignedIn() 
         && isValidId(userId)
@@ -125,7 +122,7 @@ service cloud.firestore {
         && incoming().id == existing().id
         && (
           isAdmin() || 
-          (userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['full_name', 'company', 'avatar_url', 'phone']))
+          (userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['full_name', 'company', 'avatar_url', 'phone', 'email_verified', 'verification_code']))
         );
         
       allow delete: if isAdmin();
@@ -201,7 +198,7 @@ service cloud.firestore {
         && isValidAppNotification(incoming())
         && incoming().id == existing().id
         && incoming().user_id == existing().user_id
-        && (isAdmin() || (existing().user_id == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['read'])));
+        && (isAdmin() || ((existing().user_id == request.auth.uid || existing().user_id == 'all') && incoming().diff(existing()).affectedKeys().hasOnly(['read'])));
         
       allow delete: if isAdmin();
     }

@@ -785,91 +785,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Sign In
   const signIn = async (email: string, password?: string): Promise<boolean> => {
-    if (password && password.length >= 6) {
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-      } catch (authErr: any) {
-        console.log('Firebase Auth sign in notice:', authErr?.message);
-      }
+    if (!password || password.length < 6) {
+      showToast('Password is required (min 6 chars).', 'error');
+      return false;
     }
 
-    const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (existing) {
-      if (existing.banned) {
-        showToast('This account has been suspended by an administrator.', 'error');
+    try {
+      const fbCredential = await signInWithEmailAndPassword(auth, email, password);
+      const uid = fbCredential.user.uid;
+      
+      const existing = users.find((u) => u.id === uid || u.email.toLowerCase() === email.toLowerCase());
+      if (existing) {
+        if (existing.banned) {
+          showToast('This account has been suspended by an administrator.', 'error');
+          return false;
+        }
+        
+        setCurrentUser(existing);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
+        setViewRoleState(existing.role);
+        localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, existing.role);
+        setActivePage('dashboard');
+        
+        if (!existing.email_verified && existing.role !== 'admin') {
+           // They will be redirected to the email verification page by App.tsx
+           return true; 
+        }
+        
+        showToast(`Welcome back, ${existing.full_name}! (${existing.role.toUpperCase()})`, 'success');
+        return true;
+      } else {
+        showToast('Account record not found in system.', 'error');
         return false;
       }
-      setCurrentUser(existing);
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
-      setViewRoleState(existing.role);
-      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, existing.role);
-      setActivePage('dashboard');
-      showToast(`Welcome back, ${existing.full_name}! (${existing.role.toUpperCase()})`, 'success');
-      return true;
+    } catch (authErr: any) {
+      console.log('Firebase Auth sign in notice:', authErr?.message);
+      showToast('Invalid login details. Please check your email and password.', 'error');
+      return false;
     }
-
-    // New user signing in: Check if first user in database
-    const isFirstUser = users.length === 0;
-    const assignedRole: UserRole = isFirstUser ? 'admin' : 'user';
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    const newUser: UserProfile = {
-      id: `user-${Date.now()}`,
-      email,
-      full_name: email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-      role: assignedRole,
-      is_approved: isFirstUser, // First user is automatically approved
-      email_verified: isFirstUser, // First user is automatically verified
-      verification_code: isFirstUser ? undefined : code,
-      banned: false,
-      created_at: new Date().toISOString(),
-    };
-
-    setUsers((prev) => [...prev, newUser]);
-    await saveUserToFirestore(newUser);
-
-    if (!isFirstUser) {
-      // Send verification email to outbox
-      const outItem: EmailOutboxItem = {
-        id: `out-${Date.now()}`,
-        to: email,
-        subject: `[TechnoResolve] Action Required: Verify your email address - Code: ${code}`,
-        template: 'email_verification',
-        status: 'sent',
-        created_at: new Date().toISOString(),
-        payload: `Hi ${newUser.full_name},\n\nYour 6-digit email confirmation code is: ${code}`,
-      };
-      setOutbox((prev) => [outItem, ...prev]);
-      saveOutboxToFirestore(outItem);
-
-      // Send admin approval request notification
-      const adminNotif: AppNotification = {
-        id: `notif-${Date.now()}`,
-        user_id: 'admin',
-        title: 'New User Awaiting Approval',
-        message: `${newUser.full_name} (${newUser.email}) registered and requires admin approval.`,
-        type: 'approval',
-        read: false,
-        created_at: new Date().toISOString(),
-        target_id: newUser.id,
-        link_page: 'users',
-      };
-      setNotifications((prev) => [adminNotif, ...prev]);
-      saveNotificationToFirestore(adminNotif);
-    }
-
-    setCurrentUser(newUser);
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
-    setViewRoleState(assignedRole);
-    localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, assignedRole);
-    setActivePage('dashboard');
-
-    if (isFirstUser) {
-      showToast('👑 Welcome! As the first user, you have been assigned full Administrator privileges.', 'success');
-    } else {
-      showToast(`Welcome ${newUser.full_name}! Please verify your email.`, 'info');
-    }
-    return true;
   };
 
   // Google Sign-In with Firebase Auth
@@ -970,23 +923,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     company?: string;
     role?: UserRole;
   }): Promise<boolean> => {
-    if (data.password && data.password.length >= 6) {
-      try {
-        await createUserWithEmailAndPassword(auth, data.email, data.password);
-      } catch (authErr: any) {
-        console.log('Firebase Auth registration notice:', authErr?.message);
-      }
+    if (!data.password || data.password.length < 6) {
+      showToast('Password is required (min 6 chars).', 'error');
+      return false;
     }
-
+    
     const existing = users.find((u) => u.email.toLowerCase() === data.email.toLowerCase());
     if (existing) {
-      showToast('An account with this email already exists. Signed in.', 'info');
-      setCurrentUser(existing);
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
-      setViewRoleState(existing.role);
-      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, existing.role);
-      setActivePage('dashboard');
-      return true;
+      showToast('An account with this email already exists.', 'error');
+      return false;
+    }
+
+    let uid = '';
+    try {
+      const fbCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      uid = fbCredential.user.uid;
+    } catch (authErr: any) {
+      console.log('Firebase Auth registration notice:', authErr?.message);
+      showToast(authErr?.message || 'Registration failed.', 'error');
+      return false;
     }
 
     const isFirstUser = users.length === 0;
@@ -994,7 +949,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     const newUser: UserProfile = {
-      id: `user-${Date.now()}`,
+      id: uid,
       email: data.email,
       full_name: data.full_name,
       company: data.company || 'TechnoResolve Enterprise',
@@ -1018,7 +973,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         template: 'email_verification',
         status: 'sent',
         created_at: new Date().toISOString(),
-        payload: `Hi ${data.full_name},\n\nWelcome to TechnoResolve IT Service Desk!\n\nYour 6-digit email confirmation code is: ${code}\n\nOnce verified, an administrator will review and activate your account access.`,
+        payload: `Hi ${data.full_name},
+
+Welcome to TechnoResolve IT Service Desk!
+
+Your 6-digit email confirmation code is: ${code}
+
+Once verified, an administrator will review and activate your account access.`,
       };
       setOutbox((prev) => [outItem, ...prev]);
       saveOutboxToFirestore(outItem);
@@ -1037,19 +998,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       setNotifications((prev) => [adminNotif, ...prev]);
       saveNotificationToFirestore(adminNotif);
-
-      // 3. User initial notification
-      const userNotif: AppNotification = {
-        id: `notif-user-${Date.now()}`,
-        user_id: newUser.id,
-        title: 'Complete Your Account Setup',
-        message: `Please verify your email address using the 6-digit confirmation code (${code}).`,
-        type: 'verification',
-        read: false,
-        created_at: new Date().toISOString(),
-      };
-      setNotifications((prev) => [userNotif, ...prev]);
-      saveNotificationToFirestore(userNotif);
     }
 
     setCurrentUser(newUser);
@@ -1059,10 +1007,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActivePage('dashboard');
 
     if (isFirstUser) {
-      showToast('👑 Welcome! As the first registered user, you have been granted full Administrator access.', 'success');
+      showToast('👑 Welcome! As the first user, you have been granted full Administrator access.', 'success');
     } else {
-      showToast(`Account created! Please check your email for the 6-digit confirmation code.`, 'info');
+      showToast('Account created! Please check your email to verify your address.', 'success');
     }
+    
     return true;
   };
 
