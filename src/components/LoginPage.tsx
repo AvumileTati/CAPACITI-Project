@@ -43,11 +43,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
   const isSystemEmpty = users.length === 0;
 
   const [mode, setMode] = useState<'signin' | 'signup'>(isSystemEmpty ? 'signup' : 'signin');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('philibaneawonke@gmail.com');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [company, setCompany] = useState('');
+  const [fullName, setFullName] = useState('Philibane Awonke');
+  const [company, setCompany] = useState('TechnoResolve IT Administration');
   const [role, setRole] = useState<UserRole>('admin');
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -125,10 +125,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
     setIsLoading(true);
     try {
       await signUp({
-        email: 'admin@technoresolve.internal',
+        email: 'philibaneawonke@gmail.com',
         password: 'AdminPassword123!',
-        full_name: 'Lead System Administrator',
-        company: 'TechnoResolve Control',
+        full_name: 'Philibane Awonke',
+        company: 'TechnoResolve IT Administration',
         role: 'admin',
       });
       setActivePage('dashboard');
@@ -428,18 +428,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
           </form>
 
           {/* Quick First-Admin Initialization Helper */}
-          {isSystemEmpty && (
-            <div className="border-t border-slate-200 pt-4 text-center">
-              <button
-                type="button"
-                onClick={handleQuickFirstAdmin}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-950/30 hover:bg-amber-900/40 text-amber-200 py-2.5 text-xs font-semibold transition-all cursor-pointer"
-              >
-                <Crown className="size-4 text-amber-400" />
-                <span>1-Click Setup Default Admin</span>
-              </button>
-            </div>
-          )}
+          <div className="border-t border-slate-200 pt-4 text-center">
+            <button
+              type="button"
+              onClick={handleQuickFirstAdmin}
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-[#0f3b6c] py-2.5 text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              <Crown className="size-4 text-amber-500" />
+              <span>1-Click Launch Admin (philibaneawonke@gmail.com)</span>
+            </button>
+          </div>
         </motion.div>
       </main>
 

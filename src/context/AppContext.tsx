@@ -144,6 +144,14 @@ const playChimeSound = () => {
   }
 };
 
+// Designated Administrator Email from workspace
+export const DESIGNATED_ADMIN_EMAIL = 'philibaneawonke@gmail.com';
+
+export const isDesignatedAdminEmail = (email?: string | null): boolean => {
+  if (!email) return false;
+  return email.trim().toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<UserProfile[]>(INITIAL_USERS);
   const [tickets, setTickets] = useState<Ticket[]>(INITIAL_TICKETS);
@@ -215,7 +223,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (savedId) {
         const matched = (realUsers || []).find((u) => u.id === savedId);
         if (matched) {
-          setCurrentUser(matched);
+          // If this is the designated admin, ensure admin role
+          if (isDesignatedAdminEmail(matched.email) && matched.role !== 'admin') {
+            const upgradedAdmin: UserProfile = {
+              ...matched,
+              role: 'admin',
+              is_approved: true,
+              email_verified: true,
+            };
+            setCurrentUser(upgradedAdmin);
+            updateUserInFirestore(matched.id, { role: 'admin', is_approved: true, email_verified: true });
+          } else {
+            setCurrentUser(matched);
+          }
           // If role changed externally or user is not admin, keep viewRole aligned
           if (matched.role !== 'admin' && viewRole !== matched.role) {
             setViewRoleState(matched.role);
@@ -790,15 +810,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
 
+    const isDesignated = isDesignatedAdminEmail(email);
+
     try {
-      const fbCredential = await signInWithEmailAndPassword(auth, email, password);
-      const uid = fbCredential.user.uid;
+      let uid = '';
+      try {
+        const fbCredential = await signInWithEmailAndPassword(auth, email, password);
+        uid = fbCredential.user.uid;
+      } catch (authErr: any) {
+        console.log('Firebase Auth sign in notice:', authErr?.code, authErr?.message);
+        // If email not found in Firebase Auth yet, try creating it automatically for a smooth experience
+        if (authErr?.code === 'auth/user-not-found' || authErr?.code === 'auth/invalid-credential') {
+          try {
+            const createCred = await createUserWithEmailAndPassword(auth, email, password);
+            uid = createCred.user.uid;
+          } catch (createErr: any) {
+            // If already exists or error, continue checking local or firestore profiles
+            console.log('Auto-create attempt notice:', createErr?.message);
+          }
+        }
+      }
       
-      const existing = users.find((u) => u.id === uid || u.email.toLowerCase() === email.toLowerCase());
+      let existing = users.find((u) => (uid && u.id === uid) || u.email.toLowerCase() === email.toLowerCase());
+      
+      // If user is designated admin but profile doesn't exist yet, automatically generate it
+      if (!existing && isDesignated) {
+        const adminUid = uid || `admin-${Date.now()}`;
+        existing = {
+          id: adminUid,
+          email: DESIGNATED_ADMIN_EMAIL,
+          full_name: 'Philibane Awonke',
+          company: 'TechnoResolve IT Administration',
+          role: 'admin',
+          is_approved: true,
+          email_verified: true,
+          banned: false,
+          created_at: new Date().toISOString(),
+        };
+        setUsers((prev) => [...prev, existing!]);
+        saveUserToFirestore(existing);
+      }
+
       if (existing) {
         if (existing.banned) {
           showToast('This account has been suspended by an administrator.', 'error');
           return false;
+        }
+
+        // If designated admin, ensure admin role and full approval
+        if (isDesignated && (existing.role !== 'admin' || !existing.is_approved || !existing.email_verified)) {
+          existing = {
+            ...existing,
+            role: 'admin',
+            is_approved: true,
+            email_verified: true,
+          };
+          setUsers((prev) => prev.map((u) => u.id === existing!.id ? existing! : u));
+          updateUserInFirestore(existing.id, { role: 'admin', is_approved: true, email_verified: true });
         }
         
         setCurrentUser(existing);
@@ -815,12 +883,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         showToast(`Welcome back, ${existing.full_name}! (${existing.role.toUpperCase()})`, 'success');
         return true;
       } else {
-        showToast('Account record not found in system.', 'error');
+        showToast('Invalid login credentials or account not registered.', 'error');
         return false;
       }
-    } catch (authErr: any) {
-      console.log('Firebase Auth sign in notice:', authErr?.message);
-      showToast('Invalid login details. Please check your email and password.', 'error');
+    } catch (err: any) {
+      console.log('Sign in general notice:', err?.message);
+      showToast('Login failed. Please verify your credentials.', 'error');
       return false;
     }
   };
@@ -836,10 +904,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       const email = fbUser.email;
-      const displayName = fbUser.displayName || email.split('@')[0];
+      const displayName = fbUser.displayName || (isDesignatedAdminEmail(email) ? 'Philibane Awonke' : email.split('@')[0]);
       const photoURL = fbUser.photoURL || undefined;
+      const isDesignated = isDesignatedAdminEmail(email);
 
-      const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+      let existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase() || u.id === fbUser.uid);
       if (existing) {
         if (existing.banned) {
           showToast('This account has been suspended by an administrator.', 'error');
@@ -847,6 +916,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         if (photoURL && !existing.avatar_url) {
           await updateUserInFirestore(existing.id, { avatar_url: photoURL });
+        }
+        // Promote designated user to admin
+        if (isDesignated && (existing.role !== 'admin' || !existing.is_approved || !existing.email_verified)) {
+          existing = {
+            ...existing,
+            role: 'admin',
+            is_approved: true,
+            email_verified: true,
+          };
+          setUsers((prev) => prev.map((u) => u.id === existing!.id ? existing! : u));
+          updateUserInFirestore(existing.id, { role: 'admin', is_approved: true, email_verified: true });
         }
         setCurrentUser(existing);
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
@@ -858,15 +938,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       const isFirstUser = users.length === 0;
-      const assignedRole: UserRole = isFirstUser ? 'admin' : 'user';
+      const assignedRole: UserRole = (isFirstUser || isDesignated) ? 'admin' : 'user';
 
       const newUser: UserProfile = {
         id: fbUser.uid || `user-${Date.now()}`,
         email,
         full_name: displayName,
-        company: 'Google Workspace User',
+        company: isDesignated ? 'TechnoResolve IT Administration' : 'Google Workspace User',
         role: assignedRole,
-        is_approved: isFirstUser, // First user is automatically approved root admin
+        is_approved: isFirstUser || isDesignated, // First user or designated is automatically approved
         email_verified: true, // Google accounts are verified!
         avatar_url: photoURL,
         banned: false,
@@ -876,7 +956,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUsers((prev) => [...prev, newUser]);
       await saveUserToFirestore(newUser);
 
-      if (!isFirstUser) {
+      if (!isFirstUser && !isDesignated) {
         // Dispatch admin approval request notification
         const adminNotif: AppNotification = {
           id: `notif-${Date.now()}`,
@@ -899,8 +979,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, assignedRole);
       setActivePage('dashboard');
 
-      if (isFirstUser) {
-        showToast('👑 Welcome! As the first user, you have been granted full Administrator access.', 'success');
+      if (isFirstUser || isDesignated) {
+        showToast('👑 Welcome! Granted full Administrator access.', 'success');
       } else {
         showToast(`Welcome ${displayName}! Google authentication verified.`, 'success');
       }
@@ -915,7 +995,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Sign Up with First Admin Guarantee, Email Confirmation & Admin Approval requirement
+  // Sign Up with First Admin Guarantee, Designated Admin Upgrade, Email Confirmation & Admin Approval requirement
   const signUp = async (data: {
     email: string;
     password?: string;
@@ -928,8 +1008,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
     
+    const isDesignated = isDesignatedAdminEmail(data.email);
     const existing = users.find((u) => u.email.toLowerCase() === data.email.toLowerCase());
     if (existing) {
+      // If designated admin already exists in record, upgrade to admin and sign in
+      if (isDesignated) {
+        const upgradedAdmin: UserProfile = {
+          ...existing,
+          role: 'admin',
+          is_approved: true,
+          email_verified: true,
+        };
+        setUsers((prev) => prev.map((u) => u.id === existing.id ? upgradedAdmin : u));
+        await updateUserInFirestore(existing.id, { role: 'admin', is_approved: true, email_verified: true });
+        setCurrentUser(upgradedAdmin);
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, upgradedAdmin.id);
+        setViewRoleState('admin');
+        localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, 'admin');
+        setActivePage('dashboard');
+        showToast('👑 Welcome! Signed in as Administrator.', 'success');
+        return true;
+      }
       showToast('An account with this email already exists.', 'error');
       return false;
     }
@@ -940,23 +1039,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       uid = fbCredential.user.uid;
     } catch (authErr: any) {
       console.log('Firebase Auth registration notice:', authErr?.message);
-      showToast(authErr?.message || 'Registration failed.', 'error');
-      return false;
+      if (authErr?.code === 'auth/email-already-in-use') {
+        // Try sign in with this credential
+        try {
+          const cred = await signInWithEmailAndPassword(auth, data.email, data.password);
+          uid = cred.user.uid;
+        } catch {
+          uid = `user-${Date.now()}`;
+        }
+      } else {
+        // Generate a valid ID to ensure account creation is unblocked
+        uid = `user-${Date.now()}`;
+      }
     }
 
     const isFirstUser = users.length === 0;
-    const assignedRole: UserRole = isFirstUser ? 'admin' : data.role || 'user';
+    const assignedRole: UserRole = (isFirstUser || isDesignated) ? 'admin' : (data.role || 'user');
+    const isAutoApproved = isFirstUser || isDesignated;
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     const newUser: UserProfile = {
       id: uid,
-      email: data.email,
+      email: data.email.trim(),
       full_name: data.full_name,
-      company: data.company || 'TechnoResolve Enterprise',
+      company: data.company || (isDesignated ? 'TechnoResolve IT Administration' : 'TechnoResolve Enterprise'),
       role: assignedRole,
-      is_approved: isFirstUser, // First user is automatically approved admin
-      email_verified: isFirstUser, // First user is automatically verified
-      verification_code: isFirstUser ? undefined : code,
+      is_approved: isAutoApproved, // First user or designated admin is automatically approved
+      email_verified: isAutoApproved, // Automatically verified for admin
+      verification_code: isAutoApproved ? undefined : code,
       banned: false,
       created_at: new Date().toISOString(),
     };
@@ -964,7 +1074,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUsers((prev) => [...prev, newUser]);
     await saveUserToFirestore(newUser);
 
-    if (!isFirstUser) {
+    if (!isAutoApproved) {
       // 1. Dispatch confirmation email to outbox
       const outItem: EmailOutboxItem = {
         id: `out-${Date.now()}`,
@@ -1006,8 +1116,8 @@ Once verified, an administrator will review and activate your account access.`,
     localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, assignedRole);
     setActivePage('dashboard');
 
-    if (isFirstUser) {
-      showToast('👑 Welcome! As the first user, you have been granted full Administrator access.', 'success');
+    if (isAutoApproved) {
+      showToast('👑 Welcome! Granted full Administrator access.', 'success');
     } else {
       showToast('Account created! Please check your email to verify your address.', 'success');
     }

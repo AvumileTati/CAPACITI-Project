@@ -474,6 +474,24 @@ export const CustomerPortal: React.FC = () => {
                   <span className="text-sm font-medium text-slate-800">{currentUser?.company || 'Acme Enterprise'}</span>
                 </div>
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+                  <span className="text-xs font-semibold uppercase text-slate-400">Account Role</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                      currentUser?.role === 'admin' 
+                        ? 'bg-amber-100 text-amber-800' 
+                        : currentUser?.role === 'technician' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-slate-100 text-slate-800'
+                    }`}>
+                      {currentUser?.role === 'admin' && <Shield className="size-3 text-amber-600" />}
+                      <span className="capitalize">{currentUser?.role || 'user'}</span>
+                    </span>
+                    {currentUser?.role === 'admin' && (
+                      <RoleSwitcher />
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
                   <span className="text-xs font-semibold uppercase text-slate-400">Membership Tier</span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-3 py-0.5 text-xs font-semibold">
                     <CheckCircle2 className="size-3" /> Enterprise SLA (24/7)
