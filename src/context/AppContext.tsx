@@ -803,6 +803,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setOutbox((prev) => [outItem, ...prev]);
     saveOutboxToFirestore(outItem);
+    // Send actual email via backend
+    fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: outItem.to, subject: outItem.subject, text: outItem.payload })
+    }).catch(console.error);
 
     showToast(`Verification email resent to ${currentUser.email} with code ${newCode}`, 'info');
   };
@@ -1095,6 +1101,12 @@ Once verified, an administrator will review and activate your account access.`,
       };
       setOutbox((prev) => [outItem, ...prev]);
       saveOutboxToFirestore(outItem);
+      // Send actual email via backend
+      fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: outItem.to, subject: outItem.subject, text: outItem.payload })
+      }).catch(console.error);
 
       // 2. Dispatch approval notification to all Admins
       const adminNotif: AppNotification = {

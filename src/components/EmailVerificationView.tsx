@@ -46,7 +46,7 @@ export const EmailVerificationView: React.FC = () => {
     setIsSubmitting(false);
 
     if (!success) {
-      setErrorMsg('Invalid code. Please verify the code sent to your email or check the outbox.');
+      setErrorMsg('Invalid code. Please verify the code sent to your email.');
     }
   };
 
