@@ -231,8 +231,10 @@ export const CustomerPortal: React.FC = () => {
               </div>
 
               {/* Quick Actions (Bento Grid) */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <motion.button
+                  whileHover={{ y: -3, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setPreselectedCategory('hardware');
                     setIsNewTicketOpen(true);
@@ -246,8 +248,10 @@ export const CustomerPortal: React.FC = () => {
                     <h3 className="font-bold text-slate-900 text-sm">Hardware</h3>
                     <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Devices & Peripherals</p>
                   </div>
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ y: -3, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setPreselectedCategory('software');
                     setIsNewTicketOpen(true);
@@ -261,8 +265,10 @@ export const CustomerPortal: React.FC = () => {
                     <h3 className="font-bold text-slate-900 text-sm">Software</h3>
                     <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Apps & Access</p>
                   </div>
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ y: -3, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setPreselectedCategory('access');
                     setIsNewTicketOpen(true);
@@ -276,8 +282,10 @@ export const CustomerPortal: React.FC = () => {
                     <h3 className="font-bold text-slate-900 text-sm">Access</h3>
                     <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Passwords & VPN</p>
                   </div>
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ y: -3, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     setPreselectedCategory('billing');
                     setIsNewTicketOpen(true);
@@ -291,7 +299,7 @@ export const CustomerPortal: React.FC = () => {
                     <h3 className="font-bold text-slate-900 text-sm">Billing</h3>
                     <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Invoices & Cards</p>
                   </div>
-                </button>
+                </motion.button>
               </div>
 
               {/* General Request & AI Banner */}

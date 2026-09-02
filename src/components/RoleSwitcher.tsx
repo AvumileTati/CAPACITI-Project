@@ -2,6 +2,7 @@ import React from 'react';
 import { UserRole } from '../types';
 import { useApp } from '../context/AppContext';
 import { ShieldCheck, Wrench, User, Lock, Crown } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export const RoleSwitcher: React.FC = () => {
   const { viewRole, setViewRole, currentUser, isAdmin, showToast } = useApp();
@@ -54,14 +55,16 @@ export const RoleSwitcher: React.FC = () => {
             (r.id === 'technician' && currentUser.role === 'user'));
 
         return (
-          <button
+          <motion.button
             key={r.id}
             id={`role-btn-${r.id}`}
+            whileHover={{ scale: isLocked ? 1 : 1.03 }}
+            whileTap={{ scale: isLocked ? 1 : 0.97 }}
             onClick={() => handleRoleClick(r.id)}
             title={isLocked ? `${r.label} (Locked - Requires higher privileges)` : `Switch to ${r.label}`}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-all cursor-pointer shadow-sm border ${
               isActive
-                ? 'bg-[#ffffff] text-[#0f3b6c] border-[#0f3b6c] font-bold'
+                ? 'bg-[#ffffff] text-[#0f3b6c] border-[#0f3b6c] font-bold ring-1 ring-[#0f3b6c]/20'
                 : isLocked
                 ? 'bg-slate-100 text-slate-400 opacity-60 border-slate-200'
                 : 'bg-[#ffffff] text-[#0f3b6c] border-[#0f3b6c] hover:bg-slate-50'
@@ -76,7 +79,7 @@ export const RoleSwitcher: React.FC = () => {
             {r.id === 'admin' && isAdmin && !isActive && (
               <Crown className="size-2.5 text-amber-400 shrink-0" />
             )}
-          </button>
+          </motion.button>
         );
       })}
     </div>

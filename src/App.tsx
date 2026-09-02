@@ -1,6 +1,7 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { CheckCircle2, AlertCircle, Info, X, ShieldAlert, ArrowLeft, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 // Lazy loaded components for code-splitting
 const LandingPage = lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
@@ -10,7 +11,6 @@ const AdminControlCenter = lazy(() => import('./components/AdminControlCenter').
 const LoginPage = lazy(() => import('./components/LoginPage').then(module => ({ default: module.LoginPage })));
 const AuthModal = lazy(() => import('./components/AuthModal').then(module => ({ default: module.AuthModal })));
 const NewTicketModal = lazy(() => import('./components/NewTicketModal').then(module => ({ default: module.NewTicketModal })));
-const EmailVerificationView = lazy(() => import('./components/EmailVerificationView').then(module => ({ default: module.EmailVerificationView })));
 const PendingApprovalView = lazy(() => import('./components/PendingApprovalView').then(module => ({ default: module.PendingApprovalView })));
 const NotificationCenterModal = lazy(() => import('./components/NotificationCenterModal').then(module => ({ default: module.NotificationCenterModal })));
 const EmailOutboxModal = lazy(() => import('./components/EmailOutboxModal').then(module => ({ default: module.EmailOutboxModal })));
@@ -28,37 +28,43 @@ const ToastContainer: React.FC = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm sm:max-w-md w-full px-4 sm:px-0 pointer-events-none">
-      {toasts.map((toast) => {
-        return (
-          <div
-            key={toast.id}
-            className={`pointer-events-auto flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-xs shadow-xl backdrop-blur-md transition-all animate-in slide-in-from-bottom-3 duration-200 ${
-              toast.type === 'success'
-                ? 'border-emerald-500/40 bg-[#061e14]/95 text-emerald-100'
-                : toast.type === 'error'
-                ? 'border-rose-500/40 bg-[#250911]/95 text-rose-100'
-                : 'border-cyan-500/40 bg-[#081b33]/95 text-cyan-100'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              {toast.type === 'success' ? (
-                <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
-              ) : toast.type === 'error' ? (
-                <AlertCircle className="size-4 text-rose-400 shrink-0" />
-              ) : (
-                <Info className="size-4 text-cyan-400 shrink-0" />
-              )}
-              <p className="font-medium leading-snug">{toast.message}</p>
-            </div>
-            <button
-              onClick={() => dismissToast(toast.id)}
-              className="rounded p-1 text-white/60 hover:text-white transition-colors cursor-pointer shrink-0"
+      <AnimatePresence>
+        {toasts.map((toast) => {
+          return (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 16, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className={`pointer-events-auto flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-xs shadow-xl backdrop-blur-md transition-all ${
+                toast.type === 'success'
+                  ? 'border-emerald-500/40 bg-[#061e14]/95 text-emerald-100'
+                  : toast.type === 'error'
+                  ? 'border-rose-500/40 bg-[#250911]/95 text-rose-100'
+                  : 'border-cyan-500/40 bg-[#081b33]/95 text-cyan-100'
+              }`}
             >
-              <X className="size-3.5" />
-            </button>
-          </div>
-        );
-      })}
+              <div className="flex items-center gap-2.5">
+                {toast.type === 'success' ? (
+                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+                ) : toast.type === 'error' ? (
+                  <AlertCircle className="size-4 text-rose-400 shrink-0" />
+                ) : (
+                  <Info className="size-4 text-cyan-400 shrink-0" />
+                )}
+                <p className="font-medium leading-snug">{toast.message}</p>
+              </div>
+              <button
+                onClick={() => dismissToast(toast.id)}
+                className="rounded p-1 text-white/60 hover:text-white transition-colors cursor-pointer shrink-0"
+              >
+                <X className="size-3.5" />
+              </button>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 };
@@ -110,7 +116,14 @@ const MainContent: React.FC = () => {
   if (activePage === 'login') {
     return (
       <div className="min-h-screen bg-background font-sans theme-user">
-        <LoginPage onBackToLanding={() => setActivePage('landing')} />
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+        >
+          <LoginPage onBackToLanding={() => setActivePage('landing')} />
+        </motion.div>
         <ToastContainer />
         <EmailOutboxModal isOpen={isOutboxOpen} onClose={() => setIsOutboxOpen(false)} />
       </div>
@@ -120,10 +133,17 @@ const MainContent: React.FC = () => {
   if (activePage === 'landing') {
     return (
       <div className="min-h-screen bg-background font-sans theme-user">
-        <LandingPage
-          onOpenAuth={() => setActivePage('login')}
-          onOpenNewTicket={() => setIsNewTicketOpen(true)}
-        />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <LandingPage
+            onOpenAuth={() => setActivePage('login')}
+            onOpenNewTicket={() => setIsNewTicketOpen(true)}
+          />
+        </motion.div>
         <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
         <NewTicketModal isOpen={isNewTicketOpen} onClose={() => setIsNewTicketOpen(false)} />
         <ToastContainer />
@@ -136,22 +156,17 @@ const MainContent: React.FC = () => {
     );
   }
 
-  // 2. User Gate: If logged in, check Email Verification
-  if (currentUser && !currentUser.email_verified) {
-    return (
-      <div className="min-h-screen bg-background font-sans theme-user">
-        <EmailVerificationView />
-        <ToastContainer />
-        <EmailOutboxModal isOpen={isOutboxOpen} onClose={() => setIsOutboxOpen(false)} />
-      </div>
-    );
-  }
-
-  // 3. User Gate: Check Admin Approval
+  // 2. User Gate: Check Admin Approval
   if (currentUser && !currentUser.is_approved) {
     return (
       <div className="min-h-screen bg-background font-sans theme-user">
-        <PendingApprovalView />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.25 }}
+        >
+          <PendingApprovalView />
+        </motion.div>
         <ToastContainer />
         <EmailOutboxModal isOpen={isOutboxOpen} onClose={() => setIsOutboxOpen(false)} />
         <NotificationCenterModal
@@ -193,7 +208,18 @@ const MainContent: React.FC = () => {
 
   return (
     <div className={`min-h-screen bg-background font-sans theme-${viewRole}`}>
-      {renderPortalView()}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={viewRole}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="min-h-screen"
+        >
+          {renderPortalView()}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Global Modals */}
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />

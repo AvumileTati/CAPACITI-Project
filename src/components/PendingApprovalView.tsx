@@ -74,7 +74,7 @@ export const PendingApprovalView: React.FC = () => {
             <p className="text-xs text-slate-400 leading-relaxed">
               {isRejected
                 ? 'Your registration request was not approved by the system administrator.'
-                : 'Your email is verified. An Administrator will review your request, activate your account, and assign your operational workspace role (Customer, Technician, or Admin).'}
+                : 'Your account is registered. An Administrator will review your request, activate your account, and assign your operational workspace role (Customer, Technician, or Admin).'}
             </p>
           </div>
 
@@ -93,12 +93,6 @@ export const PendingApprovalView: React.FC = () => {
               <span className="font-bold text-cyan-400 uppercase tracking-wider">{currentUser?.role}</span>
             </div>
             <div className="flex items-center justify-between text-slate-400 pt-1 border-t border-slate-800">
-              <span>Email Verification:</span>
-              <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold">
-                <MailCheck className="size-3.5" /> Verified
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-slate-400">
               <span>Approval Status:</span>
               <span className={`inline-flex items-center gap-1 font-semibold ${isRejected ? 'text-rose-400' : 'text-amber-400'}`}>
                 {isRejected ? 'Rejected' : 'Pending Admin Role Assignment'}

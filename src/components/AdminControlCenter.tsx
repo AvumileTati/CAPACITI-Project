@@ -284,7 +284,7 @@ export const AdminControlCenter: React.FC = () => {
         }`}
       >
         {/* Brand Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#61c82d] bg-[#123333]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#123333] bg-[#123333]">
           <div className="flex items-center gap-3">
             <div className="grid size-9 place-items-center rounded-xl bg-slate-100 text-[#0f3b6c] border border-[#0f3b6c]/20 shadow-xs">
               <ShieldCheck className="size-5" />
@@ -303,7 +303,7 @@ export const AdminControlCenter: React.FC = () => {
         </div>
 
         {/* Nav Groups */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 bg-[#123333]">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 bg-[#123333] border-t border-b border-[#123333]">
           {navItems.map((group) => (
             <div key={group.group} className="space-y-1">
               <p className="text-[11px] font-bold tracking-wider uppercase text-slate-400 px-3 mb-2">
@@ -412,7 +412,7 @@ export const AdminControlCenter: React.FC = () => {
             {/* Export report button */}
             <button
               onClick={handleExportCSV}
-              className="hidden sm:flex items-center gap-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-slate-900 text-xs font-semibold px-3.5 py-2 rounded-xl shadow-xs transition-all cursor-pointer"
+              className="hidden sm:flex items-center gap-1.5 bg-[#ffffff] hover:bg-slate-100 text-slate-900 text-xs font-semibold px-3.5 py-2 rounded-xl border border-slate-200 shadow-xs transition-all cursor-pointer"
             >
               <Download className="size-3.5" />
               <span>Export</span>
@@ -735,26 +735,6 @@ export const AdminControlCenter: React.FC = () => {
                       </div>
                    </div>
                 </div>
-
-                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <p className="font-bold text-red-900">Clear Database</p>
-                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
-                          purgeAllData();
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Clear Database
-                    </button>
-                  </div>
-                </div>
               </motion.div>
             )}
             {/* USER APPROVALS TAB */}
@@ -786,7 +766,6 @@ export const AdminControlCenter: React.FC = () => {
                         <tr>
                           <th className="px-5 py-3.5">User & Email</th>
                           <th className="px-5 py-3.5">Company</th>
-                          <th className="px-5 py-3.5">Email Status</th>
                           <th className="px-5 py-3.5">Requested Role</th>
                           <th className="px-5 py-3.5">Submitted</th>
                           <th className="px-5 py-3.5 text-right">Approve As</th>
@@ -795,7 +774,7 @@ export const AdminControlCenter: React.FC = () => {
                       <tbody className="divide-y divide-slate-100">
                         {pendingUsers.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="px-5 py-12 text-center text-xs text-slate-500 space-y-2">
+                            <td colSpan={5} className="px-5 py-12 text-center text-xs text-slate-500 space-y-2">
                               <CheckCircle2 className="size-8 text-emerald-500 mx-auto" />
                               <p className="font-bold text-slate-800 text-sm">All caught up!</p>
                               <p className="text-slate-400">There are no pending user registration requests at this time.</p>
@@ -809,17 +788,6 @@ export const AdminControlCenter: React.FC = () => {
                                 <p className="text-xs text-slate-500 font-mono">{u.email}</p>
                               </td>
                               <td className="px-5 py-3.5 text-slate-600">{u.company || 'Enterprise'}</td>
-                              <td className="px-5 py-3.5">
-                                {u.email_verified ? (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-0.5 text-[11px] font-semibold">
-                                    <CheckCircle2 className="size-3" /> Verified
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2.5 py-0.5 text-[11px] font-semibold">
-                                    <Clock className="size-3" /> Code Sent ({u.verification_code || 'Pending'})
-                                  </span>
-                                )}
-                              </td>
                               <td className="px-5 py-3.5">
                                 <span className="font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded uppercase text-[10px]">
                                   {u.role}
@@ -865,26 +833,6 @@ export const AdminControlCenter: React.FC = () => {
                     </table>
                   </div>
                 </div>
-
-                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <p className="font-bold text-red-900">Clear Database</p>
-                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
-                          purgeAllData();
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Clear Database
-                    </button>
-                  </div>
-                </div>
               </motion.div>
             )}
 
@@ -923,7 +871,6 @@ export const AdminControlCenter: React.FC = () => {
                           <th className="px-5 py-3.5">Name & Email</th>
                           <th className="px-5 py-3.5">Company</th>
                           <th className="px-5 py-3.5">Role</th>
-                          <th className="px-5 py-3.5">Email Verified</th>
                           <th className="px-5 py-3.5">Status</th>
                           <th className="px-5 py-3.5">Registered</th>
                           <th className="px-5 py-3.5 text-right">Actions</th>
@@ -932,7 +879,7 @@ export const AdminControlCenter: React.FC = () => {
                       <tbody className="divide-y divide-slate-100">
                         {filteredUsers.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="px-5 py-8 text-center text-xs text-slate-500">
+                            <td colSpan={6} className="px-5 py-8 text-center text-xs text-slate-500">
                               No users match your search filter.
                             </td>
                           </tr>
@@ -954,17 +901,6 @@ export const AdminControlCenter: React.FC = () => {
                                   <option value="technician">Technician</option>
                                   <option value="user">Customer (User)</option>
                                 </select>
-                              </td>
-                              <td className="px-5 py-3.5">
-                                {u.email_verified ? (
-                                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                                    <CheckCircle2 className="size-3" /> Yes
-                                  </span>
-                                ) : (
-                                  <span className="text-amber-700 font-semibold flex items-center gap-1">
-                                    <Clock className="size-3" /> Pending ({u.verification_code || '---'})
-                                  </span>
-                                )}
                               </td>
                               <td className="px-5 py-3.5">
                                 {u.banned ? (
@@ -1009,26 +945,6 @@ export const AdminControlCenter: React.FC = () => {
                         )}
                       </tbody>
                     </table>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <p className="font-bold text-red-900">Clear Database</p>
-                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
-                          purgeAllData();
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Clear Database
-                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -1135,26 +1051,6 @@ export const AdminControlCenter: React.FC = () => {
                     </table>
                   </div>
                 </div>
-
-                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <p className="font-bold text-red-900">Clear Database</p>
-                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
-                          purgeAllData();
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Clear Database
-                    </button>
-                  </div>
-                </div>
               </motion.div>
             )}
 
@@ -1256,26 +1152,6 @@ export const AdminControlCenter: React.FC = () => {
                     </table>
                   </div>
                 </div>
-
-                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <p className="font-bold text-red-900">Clear Database</p>
-                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
-                          purgeAllData();
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Clear Database
-                    </button>
-                  </div>
-                </div>
               </motion.div>
             )}
 
@@ -1327,26 +1203,6 @@ export const AdminControlCenter: React.FC = () => {
                     ))
                   )}
                 </div>
-
-                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <p className="font-bold text-red-900">Clear Database</p>
-                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
-                          purgeAllData();
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Clear Database
-                    </button>
-                  </div>
-                </div>
               </motion.div>
             )}
 
@@ -1369,26 +1225,6 @@ export const AdminControlCenter: React.FC = () => {
                   >
                     <Download className="size-4" /> Download Complete Report
                   </button>
-                </div>
-
-                <div className="bg-white border border-red-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-                  <h2 className="text-xl font-extrabold text-red-600">Danger Zone</h2>
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <p className="font-bold text-red-900">Clear Database</p>
-                      <p className="text-red-700 text-xs">Permanently delete all users, tickets, and messages.</p>
-                    </div>
-                    <button 
-                      onClick={() => {
-                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
-                          purgeAllData();
-                        }
-                      }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Clear Database
-                    </button>
-                  </div>
                 </div>
               </motion.div>
             )}

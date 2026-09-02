@@ -14,22 +14,21 @@ import {
   Sparkles,
   Crown,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const AuthModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   initialMode?: 'signin' | 'signup';
 }> = ({ isOpen, onClose, initialMode = 'signin' }) => {
-  const { users, signIn, signInWithGoogle, signUp, switchDemoUser, setActivePage, setViewRole } = useApp();
+  const { signIn, signInWithGoogle, signUp, switchDemoUser, setActivePage, setViewRole } = useApp();
 
-  const isSystemEmpty = users.length === 0;
-
-  const [mode, setMode] = useState<'signin' | 'signup'>(isSystemEmpty ? 'signup' : initialMode);
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [company, setCompany] = useState('');
-  const [role, setRole] = useState<UserRole>('admin');
+  const [role, setRole] = useState<UserRole>('user');
   const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -59,7 +58,7 @@ export const AuthModal: React.FC<{
           password,
           full_name: fullName,
           company,
-          role: isSystemEmpty ? 'admin' : role,
+          role,
         });
       }
       setActivePage('dashboard');
@@ -79,11 +78,15 @@ export const AuthModal: React.FC<{
   return (
     <div
       id="auth-modal-overlay"
-      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-xs transition-opacity duration-200"
     >
-      <div
+      <motion.div
         id="auth-modal"
-        className="panel max-h-[92vh] w-full max-w-md overflow-y-auto p-6 shadow-2xl bg-surface border-border animate-in zoom-in-95 duration-200"
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        className="panel max-h-[92vh] w-full max-w-md overflow-y-auto p-6 shadow-2xl bg-surface border-border"
       >
         <div className="flex items-center justify-between pb-3 border-b border-border/60">
           <div className="flex items-center gap-2.5">
@@ -92,11 +95,7 @@ export const AuthModal: React.FC<{
             </div>
             <div>
               <h2 className="text-base font-bold font-display text-foreground">
-                {mode === 'signin'
-                  ? 'Sign in to TechnoResolve'
-                  : isSystemEmpty
-                  ? 'Initialize Administrator Account'
-                  : 'Create your account'}
+                {mode === 'signin' ? 'Sign in to TechnoResolve' : 'Create your account'}
               </h2>
             </div>
           </div>
@@ -107,19 +106,6 @@ export const AuthModal: React.FC<{
             <X className="size-5" />
           </button>
         </div>
-
-        {/* First User Notice */}
-        {isSystemEmpty && (
-          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2">
-            <Crown className="size-4 text-amber-500 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold">Initial Administrator Setup</p>
-              <p className="text-[11px] opacity-90 mt-0.5">
-                No users currently exist. The first account registered or signed in will automatically become <strong>System Administrator</strong>.
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Google Sign In Option */}
         <div className="mt-4">
@@ -147,13 +133,7 @@ export const AuthModal: React.FC<{
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               />
             </svg>
-            <span>
-              {mode === 'signin'
-                ? 'Sign in with Google'
-                : isSystemEmpty
-                ? 'Initialize Admin with Google'
-                : 'Continue with Google'}
-            </span>
+            <span>{mode === 'signin' ? 'Sign in with Google' : 'Continue with Google'}</span>
           </button>
         </div>
 
@@ -188,26 +168,24 @@ export const AuthModal: React.FC<{
                 />
               </label>
 
-              {!isSystemEmpty && (
-                <label className="block">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-foreground">Requested Role</span>
-                    <span className="text-[10px] text-amber-600 font-medium">Assigned by Admin</span>
-                  </div>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as UserRole)}
-                    className="mt-1 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="user">Customer (Self Service)</option>
-                    <option value="technician">Support Technician</option>
-                    <option value="admin">Administrator</option>
-                  </select>
-                  <span className="text-[11px] text-muted-foreground block mt-1">
-                    Your account will be reviewed by an Administrator to approve and assign your role.
-                  </span>
-                </label>
-              )}
+              <label className="block">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-foreground">Requested Role</span>
+                  <span className="text-[10px] text-amber-600 font-medium">Assigned by Admin</span>
+                </div>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as UserRole)}
+                  className="mt-1 w-full rounded-xl border border-input bg-background px-3.5 py-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="user">Customer (Self Service)</option>
+                  <option value="technician">Support Technician</option>
+                  <option value="admin">Administrator</option>
+                </select>
+                <span className="text-[11px] text-muted-foreground block mt-1">
+                  Your account will be reviewed by an Administrator to approve and assign your role.
+                </span>
+              </label>
             </>
           )}
 
@@ -239,7 +217,7 @@ export const AuthModal: React.FC<{
             type="submit"
             className="mt-2 w-full rounded-xl bg-primary py-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity shadow-xs cursor-pointer"
           >
-            {mode === 'signin' ? 'Sign In' : isSystemEmpty ? 'Initialize Administrator Account' : 'Create Account'}
+            {mode === 'signin' ? 'Sign In' : 'Create Account'}
           </button>
         </form>
 
@@ -267,7 +245,7 @@ export const AuthModal: React.FC<{
             </p>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { X, Search, CheckCircle } from 'lucide-react';
 import { UserProfile, Ticket } from '../types';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const AssignAgentModal: React.FC<{
   isOpen: boolean;
@@ -38,11 +39,17 @@ export const AssignAgentModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden max-h-[80vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 transition-opacity duration-200">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden max-h-[80vh]"
+      >
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <h2 className="text-base font-bold text-slate-900">Assign Agent</h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors cursor-pointer">
             <X className="size-4" />
           </button>
         </div>
@@ -67,8 +74,10 @@ export const AssignAgentModal: React.FC<{
             filteredAgents.map((agent) => {
               const isAssigned = ticket.assigned_to === agent.id;
               return (
-                <button
+                <motion.button
                   key={agent.id}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                   onClick={() => handleAssign(agent)}
                   disabled={isAssigning || isAssigned}
                   className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
@@ -87,12 +96,12 @@ export const AssignAgentModal: React.FC<{
                   {isAssigned && (
                     <CheckCircle className="size-5 text-emerald-600 shrink-0" />
                   )}
-                </button>
+                </motion.button>
               );
             })
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

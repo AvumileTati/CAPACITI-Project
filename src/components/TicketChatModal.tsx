@@ -19,7 +19,11 @@ import {
   Trash2,
   Download,
   FileText as FileIcon,
+  Mic,
+  Volume2
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useVoiceInput } from '../hooks/useVoiceInput';
 
 export const TicketChatModal: React.FC<{
   ticket: Ticket | null;
@@ -75,6 +79,25 @@ export const TicketChatModal: React.FC<{
   const [isInternal, setIsInternal] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const {
+    isListening,
+    isTranscribing,
+    interimText,
+    audioLevel,
+    recordingSeconds,
+    error: speechError,
+    clearError: clearSpeechError,
+    toggleVoiceInput,
+    stopVoiceInput,
+  } = useVoiceInput({
+    onTranscript: (spokenText) => {
+      setInputBody((prev) => {
+        const trimmed = prev.trim();
+        return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+      });
+    },
+  });
 
   const ticketId = ticket?.id;
 
@@ -174,11 +197,15 @@ export const TicketChatModal: React.FC<{
   return (
     <div
       id="ticket-chat-modal-overlay"
-      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-xs transition-opacity duration-200"
     >
-      <div
+      <motion.div
         id="ticket-chat-modal"
-        className="panel flex h-[88vh] w-full max-w-3xl flex-col overflow-hidden bg-surface border-border shadow-2xl animate-in zoom-in-95 duration-200"
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        className="panel flex h-[88vh] w-full max-w-3xl flex-col overflow-hidden bg-surface border-border shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-start justify-between border-b border-border/80 p-5 bg-surface">
@@ -280,6 +307,42 @@ export const TicketChatModal: React.FC<{
             <p className="mt-2.5 text-sm text-foreground whitespace-pre-wrap leading-relaxed">
               {ticket.description}
             </p>
+
+            {/* Initial Ticket Attachments */}
+            {ticket.attachments && ticket.attachments.length > 0 && (
+              <div className="mt-3.5 space-y-2 border-t border-border/60 pt-3">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  Original Attachments ({ticket.attachments.length})
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ticket.attachments.map((att) => (
+                    <a
+                      key={att.id || att.name}
+                      href={att.url}
+                      download={att.name}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2.5 p-2 rounded-xl border border-border bg-background/80 hover:bg-secondary/60 transition-colors group"
+                    >
+                      <div className="size-9 rounded-lg bg-secondary flex items-center justify-center shrink-0 border border-border overflow-hidden">
+                        {att.type?.startsWith('image/') ? (
+                          <img src={att.url} alt={att.name} className="size-full object-cover" />
+                        ) : (
+                          <FileIcon className="size-4 text-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                          {att.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{formatBytes(att.size)}</p>
+                      </div>
+                      <Download className="size-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mr-1" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Messages */}
@@ -312,33 +375,35 @@ export const TicketChatModal: React.FC<{
                         })}
                       </span>
                     </div>
-                    <p className="mt-1.5 text-sm whitespace-pre-wrap text-foreground">
-                      {msg.body}
-                    </p>
+                    {msg.body && (
+                      <p className="mt-1.5 text-sm whitespace-pre-wrap text-foreground">
+                        {msg.body}
+                      </p>
+                    )}
                     
                     {msg.attachments && msg.attachments.length > 0 && (
-                      <div className="mt-3 space-y-1.5 border-t pt-2 border-amber-500/20">
+                      <div className="mt-3 space-y-1.5 border-t pt-2.5 border-amber-500/20">
                         {msg.attachments.map(att => (
                           <a 
-                            key={att.id}
+                            key={att.id || att.name}
                             href={att.url}
                             download={att.name}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center gap-2 p-1.5 rounded-lg border border-amber-500/20 hover:bg-amber-500/10 transition-colors group"
+                            className="flex items-center gap-2.5 p-2 rounded-lg border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 transition-colors group"
                           >
-                            <div className="size-7 rounded bg-amber-500/10 flex items-center justify-center shrink-0 border border-amber-500/20 overflow-hidden">
-                              {att.type.startsWith('image/') ? (
-                                  <img src={att.url} alt={att.name} className="size-full object-cover" />
+                            <div className="size-8 rounded bg-amber-500/15 flex items-center justify-center shrink-0 border border-amber-500/30 overflow-hidden">
+                              {att.type?.startsWith('image/') ? (
+                                <img src={att.url} alt={att.name} className="size-full object-cover" />
                               ) : (
-                                  <FileIcon className="size-3 text-amber-600 dark:text-amber-400" />
+                                <FileIcon className="size-3.5 text-amber-600 dark:text-amber-400" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 truncate">{att.name}</p>
-                              <p className="text-[9px] text-amber-600/70 dark:text-amber-400/70">{formatBytes(att.size)}</p>
+                              <p className="text-xs font-semibold text-amber-900 dark:text-amber-200 truncate">{att.name}</p>
+                              <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80">{formatBytes(att.size)}</p>
                             </div>
-                            <Download className="size-3 text-amber-600/50 group-hover:text-amber-600 transition-opacity shrink-0 mr-1" />
+                            <Download className="size-3.5 text-amber-700/60 dark:text-amber-300/60 group-hover:text-amber-800 dark:group-hover:text-amber-200 transition-opacity shrink-0 mr-1" />
                           </a>
                         ))}
                       </div>
@@ -374,33 +439,42 @@ export const TicketChatModal: React.FC<{
                         })}
                       </span>
                     </div>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed mt-0.5">
-                      {msg.body}
-                    </p>
+                    {msg.body && (
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed mt-0.5">
+                        {msg.body}
+                      </p>
+                    )}
                     
+                    {/* Render message attachments identically on both sender and receiver sides */}
                     {msg.attachments && msg.attachments.length > 0 && (
-                      <div className="mt-3 space-y-1.5 border-t pt-2 border-current/10">
+                      <div className={`mt-3 space-y-1.5 ${msg.body ? 'border-t pt-2.5' : ''} ${isMe ? 'border-primary-foreground/20' : 'border-border'}`}>
                         {msg.attachments.map(att => (
                           <a 
-                            key={att.id}
+                            key={att.id || att.name}
                             href={att.url}
                             download={att.name}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center gap-2 p-1.5 rounded-lg border border-current/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
+                            className={`flex items-center gap-2.5 p-2 rounded-xl border transition-colors group ${
+                              isMe
+                                ? 'bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground'
+                                : 'bg-background border-border hover:bg-secondary/70 text-foreground'
+                            }`}
                           >
-                            <div className="size-7 rounded bg-background/50 flex items-center justify-center shrink-0 border border-current/10 overflow-hidden">
-                              {att.type.startsWith('image/') ? (
-                                  <img src={att.url} alt={att.name} className="size-full object-cover" />
+                            <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 border overflow-hidden ${
+                              isMe ? 'bg-primary-foreground/15 border-primary-foreground/25' : 'bg-secondary border-border'
+                            }`}>
+                              {att.type?.startsWith('image/') ? (
+                                <img src={att.url} alt={att.name} className="size-full object-cover" />
                               ) : (
-                                  <FileIcon className="size-3 text-current opacity-70" />
+                                <FileIcon className="size-3.5 text-current opacity-90" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[11px] font-semibold text-current truncate">{att.name}</p>
-                              <p className="text-[9px] text-current opacity-70">{formatBytes(att.size)}</p>
+                              <p className="text-xs font-semibold truncate leading-tight">{att.name}</p>
+                              <p className={`text-[10px] leading-tight mt-0.5 ${isMe ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>{formatBytes(att.size)}</p>
                             </div>
-                            <Download className="size-3 text-current opacity-50 group-hover:opacity-100 transition-opacity shrink-0 mr-1" />
+                            <Download className={`size-3.5 shrink-0 mr-1 opacity-70 group-hover:opacity-100 transition-opacity ${isMe ? 'text-primary-foreground' : 'text-primary'}`} />
                           </a>
                         ))}
                       </div>
@@ -515,11 +589,85 @@ export const TicketChatModal: React.FC<{
               ))}
             </div>
           )}
+          {/* Voice Input Feedback in Ticket Chat */}
+          <AnimatePresence>
+            {isListening && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="mb-2 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-2 overflow-hidden flex-1">
+                  <div className="flex items-center gap-1 shrink-0 h-3.5">
+                    <span
+                      className="w-1 bg-rose-500 rounded-full transition-all duration-75"
+                      style={{ height: `${Math.max(3, Math.min(14, (audioLevel / 100) * 14 + 3))}px` }}
+                    />
+                    <span
+                      className="w-1 bg-rose-500 rounded-full transition-all duration-75"
+                      style={{ height: `${Math.max(3, Math.min(16, (audioLevel / 100) * 16 + 4))}px` }}
+                    />
+                    <span
+                      className="w-1 bg-rose-500 rounded-full transition-all duration-75"
+                      style={{ height: `${Math.max(3, Math.min(12, (audioLevel / 100) * 12 + 3))}px` }}
+                    />
+                  </div>
+                  <div className="truncate flex-1">
+                    <span className="font-bold">Recording ({recordingSeconds}s): </span>
+                    <span className="italic opacity-90">{interimText || 'Speak into your microphone...'}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={stopVoiceInput}
+                  className="shrink-0 px-2.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-bold transition-all shadow-xs cursor-pointer"
+                >
+                  Done
+                </button>
+              </motion.div>
+            )}
+
+            {isTranscribing && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="mb-2 p-2 rounded-xl bg-primary/10 border border-primary/30 text-primary text-xs flex items-center gap-2"
+              >
+                <Loader2 className="size-3.5 shrink-0 animate-spin text-primary" />
+                <span>AI is transcribing your voice message...</span>
+              </motion.div>
+            )}
+
+            {speechError && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="mb-2 p-2 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs flex items-center justify-between gap-2"
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <AlertCircle className="size-3.5 shrink-0" />
+                  <span className="truncate">{speechError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearSpeechError}
+                  className="text-destructive/80 hover:text-destructive text-[11px] underline cursor-pointer shrink-0"
+                >
+                  Dismiss
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => document.getElementById('chat-file-upload')?.click()}
-              className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground transition hover:bg-secondary/80 hover:text-foreground shadow-xs border border-border"
+              className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground transition hover:bg-secondary/80 hover:text-foreground shadow-xs border border-border cursor-pointer"
+              title="Attach files"
             >
               <Paperclip className="size-4" />
             </button>
@@ -530,6 +678,30 @@ export const TicketChatModal: React.FC<{
               className="hidden" 
               onChange={handleFileSelect}
             />
+
+            {/* Microphone Button */}
+            <button
+              type="button"
+              id="chat-mic-btn"
+              onClick={() => toggleVoiceInput()}
+              disabled={isTranscribing}
+              title={isListening ? 'Stop voice recording' : 'Dictate message with voice'}
+              className={`flex size-10 shrink-0 items-center justify-center rounded-xl transition shadow-xs border cursor-pointer ${
+                isListening
+                  ? 'bg-rose-500 text-white border-rose-600 ring-2 ring-rose-400/30'
+                  : isTranscribing
+                  ? 'bg-amber-500/20 text-amber-600 border-amber-500/30'
+                  : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80 hover:text-foreground'
+              }`}
+            >
+              {isListening ? (
+                <Mic className="size-4 animate-pulse" />
+              ) : isTranscribing ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Mic className="size-4" />
+              )}
+            </button>
             <textarea
               value={inputBody}
               onChange={(e) => setInputBody(e.target.value)}
@@ -560,7 +732,7 @@ export const TicketChatModal: React.FC<{
           </div>
         </form>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };

@@ -191,7 +191,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isAdmin = currentUser?.role === 'admin';
   const isTechnician = currentUser?.role === 'technician' || currentUser?.role === 'admin';
   const isApproved = currentUser?.is_approved === true;
-  const isEmailVerified = currentUser?.email_verified === true;
+  const isEmailVerified = true;
   const pendingUsersCount = users.filter((u) => !u.is_approved && !u.rejected).length;
 
   // Filter notifications for current user
@@ -250,8 +250,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const unsubNotifs = subscribeToNotifications(currentUser?.role, currentUser?.id, (realNotifs) => {
       setNotifications(realNotifs || []);
-      // Chime if new unread notification arrived
-      if (realNotifs && realNotifs.length > prevNotifsLengthRef.current) {
+      // Chime ONLY when a new unread notification arrives after initial load
+      if (realNotifs && prevNotifsLengthRef.current > 0 && realNotifs.length > prevNotifsLengthRef.current) {
         const newest = realNotifs[0];
         if (newest && !newest.read) {
           playChimeSound();
@@ -283,7 +283,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newToast: ToastItem = { id, message, type };
     setToasts((prev) => [...prev.slice(-4), newToast]);
     setNotificationToast(newToast);
-    playChimeSound();
+    // Silent for standard toast feedback; chime sound is only played for notifications
     setTimeout(() => {
       dismissToast(id);
     }, 4500);
@@ -754,63 +754,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast('User registration rejected', 'info');
   };
 
-  // Verify email using 6-digit confirmation code
-  const verifyEmail = async (code: string): Promise<boolean> => {
+  // Verify email (legacy stub, immediately successful)
+  const verifyEmail = async (_code: string): Promise<boolean> => {
     if (!currentUser) return false;
-
-    if (currentUser.verification_code === code.trim() || code.trim() === '123456' || code.trim() === '777888') {
-      const updates = { email_verified: true };
-      setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? { ...u, ...updates } : u)));
-      await updateUserInFirestore(currentUser.id, updates);
-      setCurrentUser((prev) => (prev ? { ...prev, ...updates } : null));
-
-      const notif: AppNotification = {
-        id: `notif-${Date.now()}`,
-        user_id: currentUser.id,
-        title: 'Email Address Verified! ✅',
-        message: 'Your email confirmation was successful.',
-        type: 'verification',
-        read: false,
-        created_at: new Date().toISOString(),
-      };
-      setNotifications((prev) => [notif, ...prev]);
-      saveNotificationToFirestore(notif);
-
-      showToast('Email verified successfully! 🎉', 'success');
-      return true;
-    }
-
-    showToast('Invalid verification code. Please check your email or outbox.', 'error');
-    return false;
+    const updates = { email_verified: true };
+    setUsers((prev) => prev.map((u) => (u.id === currentUser.id ? { ...u, ...updates } : u)));
+    await updateUserInFirestore(currentUser.id, updates);
+    setCurrentUser((prev) => (prev ? { ...prev, ...updates } : null));
+    return true;
   };
 
-  // Resend verification email
+  // Resend verification email (no-op)
   const resendVerificationEmail = async () => {
-    if (!currentUser) return;
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    await updateUserInFirestore(currentUser.id, { verification_code: newCode });
-    setCurrentUser((prev) => (prev ? { ...prev, verification_code: newCode } : null));
-
-    const outItem: EmailOutboxItem = {
-      id: `out-${Date.now()}`,
-      to: currentUser.email,
-      subject: `[TechnoResolve] Action Required: Verify your email address - Code: ${newCode}`,
-      template: 'email_verification',
-      status: 'sent',
-      created_at: new Date().toISOString(),
-      payload: `Hi ${currentUser.full_name},\n\nYour 6-digit verification code is: ${newCode}\n\nPlease enter this code in your TechnoResolve portal to confirm your email.`,
-    };
-    setOutbox((prev) => [outItem, ...prev]);
-    saveOutboxToFirestore(outItem);
-    // Send actual email via backend
-    fetch('/api/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: outItem.to, subject: outItem.subject, text: outItem.payload })
-    }).catch(console.error);
-
-    showToast(`Verification email resent to ${currentUser.email} with code ${newCode}`, 'info');
+    showToast('Email verification is not required.', 'info');
   };
 
   // Sign In
@@ -871,11 +827,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, existing.role);
         setActivePage('dashboard');
         
-        if (!existing.email_verified && existing.role !== 'admin') {
-           // They will be redirected to the email verification page by App.tsx
-           return true; 
-        }
-        
         showToast(`Welcome back, ${existing.full_name}! (${existing.role.toUpperCase()})`, 'success');
         return true;
       } else {
@@ -935,10 +886,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setViewRoleState(existing.role);
         localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, existing.role);
         setActivePage('dashboard');
-        
-        if (!existing.email_verified && existing.role !== 'admin') {
-           return true; 
-        }
         
         showToast(`Welcome back, ${existing.full_name}! (${existing.role.toUpperCase()})`, 'success');
         return true;
@@ -1006,7 +953,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Sign Up with First Admin Guarantee, Designated Admin Upgrade, Email Confirmation & Admin Approval requirement
+  // Sign Up with First Admin Guarantee, Designated Admin Upgrade & Admin Approval requirement (No email verification required)
   const signUp = async (data: {
     email: string;
     password?: string;
@@ -1061,10 +1008,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const count = await getUsersCountFromFirestore();
-      const isFirstUser = count === 0;
+    const isFirstUser = count === 0;
     const assignedRole: UserRole = (isFirstUser || isDesignated) ? 'admin' : (data.role || 'user');
     const isAutoApproved = isFirstUser || isDesignated;
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     const newUser: UserProfile = {
       id: uid,
@@ -1073,8 +1019,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       company: data.company || (isDesignated ? 'TechnoResolve IT Administration' : 'TechnoResolve Enterprise'),
       role: assignedRole,
       is_approved: isAutoApproved, // First user or designated admin is automatically approved
-      email_verified: isAutoApproved, // Automatically verified for admin
-      verification_code: isAutoApproved ? undefined : code,
+      email_verified: true, // No email verification required
       banned: false,
       created_at: new Date().toISOString(),
     };
@@ -1083,32 +1028,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await saveUserToFirestore(newUser);
 
     if (!isAutoApproved) {
-      // 1. Dispatch confirmation email to outbox
-      const outItem: EmailOutboxItem = {
-        id: `out-${Date.now()}`,
-        to: data.email,
-        subject: `[TechnoResolve] Action Required: Verify your email address - Code: ${code}`,
-        template: 'email_verification',
-        status: 'sent',
-        created_at: new Date().toISOString(),
-        payload: `Hi ${data.full_name},
-
-Welcome to TechnoResolve IT Service Desk!
-
-Your 6-digit email confirmation code is: ${code}
-
-Once verified, an administrator will review and activate your account access.`,
-      };
-      setOutbox((prev) => [outItem, ...prev]);
-      saveOutboxToFirestore(outItem);
-      // Send actual email via backend
-      fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: outItem.to, subject: outItem.subject, text: outItem.payload })
-      }).catch(console.error);
-
-      // 2. Dispatch approval notification to all Admins
+      // Dispatch approval notification to all Admins
       const adminNotif: AppNotification = {
         id: `notif-${Date.now()}`,
         user_id: 'admin',
@@ -1133,7 +1053,7 @@ Once verified, an administrator will review and activate your account access.`,
     if (isAutoApproved) {
       showToast('👑 Welcome! Granted full Administrator access.', 'success');
     } else {
-      showToast('Account created! Please check your email to verify your address.', 'success');
+      showToast('Account created! An administrator will review your access request.', 'success');
     }
     
     return true;

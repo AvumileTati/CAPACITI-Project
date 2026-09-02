@@ -29,8 +29,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
     showToast,
   } = useApp();
 
-  const isSystemEmpty = users.length === 0;
-  const [mode, setMode] = useState<'signin' | 'signup'>(isSystemEmpty ? 'signup' : 'signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -134,7 +133,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
             <p className="text-slate-500 font-medium">
               {mode === 'signin' 
                 ? 'Sign in to access your workspace and tickets.'
-                : (isSystemEmpty ? 'Set up the initial Administrator account.' : 'Join the organization to submit and track requests.')}
+                : 'Create an account to submit and track IT service requests.'}
             </p>
           </div>
 

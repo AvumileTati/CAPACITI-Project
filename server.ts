@@ -2,20 +2,27 @@ import express from 'express';
 import path from 'path';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
 
 // Lazy Gemini client helper
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI | null {
   if (!aiClient && process.env.GEMINI_API_KEY) {
-    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    aiClient = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
   }
   return aiClient;
 }
@@ -25,7 +32,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// 2. AI Triage Endpoint
+// 2. AI Triage Endpoint (Ultra-fast classification)
 app.post('/api/triage', async (req, res) => {
   const { title, description, company, userSelectedCategory } = req.body;
 
@@ -35,38 +42,26 @@ app.post('/api/triage', async (req, res) => {
 
   const ai = getAI();
 
-  // If Gemini API Key is available, run real model classification
+  // If Gemini API Key is available, run high-speed model classification
   if (ai) {
     try {
-      const prompt = `You are the AI Triage Engine for TechnoResolve Desk, an enterprise IT & business support desk.
+      const prompt = `You are the AI Triage Engine for TechnoResolve Desk, an IT support desk.
 Classify the following incoming support ticket:
 Title: "${title}"
 Description: "${description}"
 Company: "${company || 'Not provided'}"
 User Selected Category: "${userSelectedCategory || 'None'}"
 
-Allowed Categories (pick exactly one value):
-- "hardware" (Laptops, desktops, monitors, docking stations, peripherals)
-- "software" (Installs, updates, runtime crashes, licenses, SaaS tooling)
-- "network" (Office Wi-Fi, VPN, LAN, remote connection drops)
-- "access" (SSO passwords, MFA tokens, Okta lockouts, IAM permissions)
-- "security" (Phishing attempts, malware, suspicious security incidents)
-- "billing" (Invoices, seat renewals, payment card issues, subscriptions)
-- "general" (General inquiries, consultations, custom workflows)
+Categories: "hardware" | "software" | "network" | "access" | "security" | "billing" | "general"
+Priorities: "low" | "medium" | "high" | "urgent"
 
-Allowed Priorities (pick exactly one):
-- "urgent" (Business halted, security breach, production outage, severe billing block)
-- "high" (Significant productivity block, recurring VPN drops, executive request)
-- "medium" (Standard inquiry, routine hardware/software glitch, new user onboard)
-- "low" (Minor question, cosmetic feedback, non-blocking request)
-
-Respond ONLY with valid JSON in this exact structure:
+Respond ONLY with valid JSON:
 {
   "category": "hardware|software|network|access|security|billing|general",
   "priority": "low|medium|high|urgent",
   "confidence": 0.95,
-  "reasoning": "One concise sentence explaining why this ticket was classified this way.",
-  "suggested_first_response": "A polite, helpful initial response sentence."
+  "reasoning": "Brief 1-sentence reason.",
+  "suggested_first_response": "Polite initial acknowledgement."
 }`;
 
       const response = await ai.models.generateContent({
@@ -74,7 +69,10 @@ Respond ONLY with valid JSON in this exact structure:
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
-          temperature: 0.2,
+          temperature: 0.1,
+          thinkingConfig: {
+            thinkingLevel: ThinkingLevel.LOW,
+          },
         },
       });
 
@@ -85,21 +83,21 @@ Respond ONLY with valid JSON in this exact structure:
         ai: {
           category: parsed.category || userSelectedCategory || 'general',
           priority: parsed.priority || 'medium',
-          confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.94,
+          confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.95,
           reasoning: parsed.reasoning || 'Automated triage based on request scope and keywords.',
           suggested_first_response: parsed.suggested_first_response || '',
         },
       });
     } catch (err: any) {
-      // API is busy or unavailable, use fallback silently to prevent false error reports
+      console.warn('AI triage notice, using instant heuristic fallback:', err?.message || err);
     }
   }
 
-  // Smart Heuristic Fallback
+  // Instant Smart Heuristic Fallback
   const lowerText = `${title} ${description}`.toLowerCase();
   let category = userSelectedCategory || 'general';
   let priority = 'medium';
-  let reasoning = 'Categorized based on natural language heuristic inspection.';
+  let reasoning = 'Categorized based on instant natural language heuristic analysis.';
 
   if (/502|500|crash|bug|exception|runtime|api|error|deploy|build|code|license/i.test(lowerText)) {
     category = 'software';
@@ -132,14 +130,14 @@ Respond ONLY with valid JSON in this exact structure:
     ai: {
       category,
       priority,
-      confidence: 0.91,
+      confidence: 0.92,
       reasoning,
       suggested_first_response: `Thank you for contacting TechnoResolve. We have logged your ${category} request and routed it to our specialized team.`,
     },
   });
 });
 
-// 3. AI Reply Drafting for Technicians
+// 3. AI Reply Drafting for Technicians (Low Latency)
 app.post('/api/ai-draft-reply', async (req, res) => {
   const { title, description, category, priority, messages, technicianName } = req.body;
 
@@ -147,29 +145,28 @@ app.post('/api/ai-draft-reply', async (req, res) => {
 
   if (ai) {
     try {
-      const prompt = `You are an expert IT support technician named "${technicianName || 'Support Tech'}" on TechnoResolve Desk.
-Draft a professional, helpful, empathetic, and technically concrete response for the customer.
+      const prompt = `You are an expert IT technician named "${technicianName || 'Support Tech'}".
+Quickly draft a concise, empathetic, and professional reply for the customer.
 
 Ticket Context:
 Title: ${title}
 Category: ${category}
 Priority: ${priority}
-Initial Description: ${description}
+Description: ${description}
 
-Message History:
-${(messages || []).map((m: any) => `[${m.author_role.toUpperCase()} - ${m.author_name}]: ${m.body}`).join('\n')}
+Recent Messages:
+${(messages || []).slice(-4).map((m: any) => `[${m.author_role} - ${m.author_name}]: ${m.body}`).join('\n')}
 
-Guidelines:
-- Acknowledge the user's issue with empathy.
-- Provide clear, actionable next steps or diagnostic questions.
-- Keep the tone concise, friendly, and professional.
-- Do not use markdown codeblocks for the entire reply, just write the clean reply text.`;
+Reply directly with just the clean message body. No markdown backticks or commentary.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3.7-flash',
         contents: prompt,
         config: {
-          temperature: 0.3,
+          temperature: 0.2,
+          thinkingConfig: {
+            thinkingLevel: ThinkingLevel.LOW,
+          },
         },
       });
 
@@ -178,7 +175,7 @@ Guidelines:
         return res.json({ suggestion });
       }
     } catch (err: any) {
-      // API is busy or unavailable, use fallback silently to prevent false error reports
+      console.warn('AI reply draft notice, using fast template fallback:', err?.message || err);
     }
   }
 
@@ -221,6 +218,87 @@ app.post('/api/send-email', async (req, res) => {
     console.error('Email send error:', err);
     res.status(500).json({ error: 'Failed to send email: ' + err.message });
   }
+});
+
+// 5. Audio Voice Transcription Endpoint with Gemini
+app.post('/api/transcribe', async (req, res) => {
+  const { audioData, mimeType } = req.body;
+
+  if (!audioData) {
+    return res.status(400).json({ error: 'audioData base64 is required.' });
+  }
+
+  const ai = getAI();
+  if (ai) {
+    // List of viable models in priority order
+    const modelsToTry = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
+    let lastError: any = null;
+
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    for (const model of modelsToTry) {
+      // Try with retry and backoff on transient errors like 503 / 429
+      const maxRetries = 2;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            await sleep(attempt * 600);
+          }
+
+          const response = await ai.models.generateContent({
+            model,
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: mimeType || 'audio/webm',
+                      data: audioData,
+                    },
+                  },
+                  {
+                    text: 'Accurately transcribe the spoken words in this audio recording. Return ONLY the transcribed text verbatim without any introductory remarks, markdown formatting, explanations, or quotes.',
+                  },
+                ],
+              },
+            ],
+            config: {
+              temperature: 0.1,
+              thinkingConfig: {
+                thinkingLevel: ThinkingLevel.LOW,
+              },
+            },
+          });
+
+          const transcript = response.text?.trim() || '';
+          return res.json({ success: true, transcript });
+        } catch (err: any) {
+          lastError = err;
+          const status = err?.status || err?.code || (err?.message?.includes('503') ? 503 : (err?.message?.includes('404') ? 404 : null));
+          console.warn(`Model ${model} (attempt ${attempt + 1}/${maxRetries + 1}) transcription notice:`, err?.message || err);
+
+          // If model is 404 (not found / deprecated), do not retry this model; jump to next
+          if (status === 404 || err?.message?.includes('404') || err?.message?.includes('no longer available')) {
+            break;
+          }
+
+          // If not the last attempt and error is 503 / 429 / overloaded, retry with backoff
+          if (attempt < maxRetries && (status === 503 || status === 429 || err?.message?.includes('high demand') || err?.message?.includes('UNAVAILABLE') || err?.message?.includes('RESOURCE_EXHAUSTED'))) {
+            continue;
+          }
+        }
+      }
+    }
+
+    console.error('Audio transcription all models exhausted:', lastError);
+    return res.status(500).json({
+      error: 'AI transcription service temporarily busy. Please try speaking again or type your message.',
+      details: lastError?.message || 'Server demand peak'
+    });
+  }
+
+  return res.status(503).json({ error: 'AI audio transcription service unavailable (missing GEMINI_API_KEY).' });
 });
 
 // Setup Vite / Static handling

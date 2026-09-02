@@ -6,10 +6,13 @@ import {
   Home, Ticket as TicketIcon, List, BarChart2, Settings,
   Bell, LogOut, Search, SlidersHorizontal, Copy, UserPlus,
   UserCheck, ArrowUpRight, CheckCircle, Lock, Send, Cpu, User,
-  RefreshCw, CheckCircle2
+  RefreshCw, CheckCircle2, Paperclip, Trash2, Download, FileText as FileIcon,
+  Mic, Loader2, AlertCircle
 } from 'lucide-react';
 import { RoleSwitcher } from './RoleSwitcher';
 import { AssignAgentModal } from './AssignAgentModal';
+import { motion, AnimatePresence } from 'motion/react';
+import { useVoiceInput } from '../hooks/useVoiceInput';
 
 export const TechnicianWorkspace: React.FC = () => {
   const {
@@ -40,6 +43,60 @@ export const TechnicianWorkspace: React.FC = () => {
   const [isDrafting, setIsDrafting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [composerAttachments, setComposerAttachments] = useState<{ id: string; file: File; previewUrl: string; size: number }[]>([]);
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleTechFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const filesArray: File[] = Array.from(e.target.files);
+      const newAtts = filesArray.map((file) => ({
+        id: Math.random().toString(36).substring(7),
+        file,
+        previewUrl: URL.createObjectURL(file),
+        size: file.size,
+      }));
+      setComposerAttachments((prev) => [...prev, ...newAtts]);
+    }
+  };
+
+  const removeTechAttachment = (id: string) => {
+    setComposerAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const {
+    isListening,
+    isTranscribing,
+    interimText,
+    audioLevel,
+    recordingSeconds,
+    error: speechError,
+    clearError: clearSpeechError,
+    toggleVoiceInput,
+    stopVoiceInput,
+  } = useVoiceInput({
+    onTranscript: (spokenText) => {
+      setReplyText((prev) => {
+        const trimmed = prev.trim();
+        return trimmed ? `${trimmed} ${spokenText}` : spokenText;
+      });
+    },
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -104,9 +161,31 @@ export const TechnicianWorkspace: React.FC = () => {
 
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeTicket || !replyText.trim()) return;
-    await sendMessage(activeTicket.id, replyText.trim(), isInternal);
-    setReplyText('');
+    if (!activeTicket || (!replyText.trim() && composerAttachments.length === 0)) return;
+
+    try {
+      const processedAttachments = await Promise.all(
+        composerAttachments.map(async (att) => {
+          let url = att.previewUrl;
+          if (att.size < 500000) {
+            url = await fileToBase64(att.file);
+          }
+          return {
+            id: att.id,
+            name: att.file.name,
+            size: att.size,
+            type: att.file.type,
+            url: url,
+          };
+        })
+      );
+
+      await sendMessage(activeTicket.id, replyText.trim(), isInternal, processedAttachments);
+      setReplyText('');
+      setComposerAttachments([]);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleAIDraft = async () => {
@@ -335,8 +414,10 @@ export const TechnicianWorkspace: React.FC = () => {
               {filteredTickets.map(ticket => {
                 const isSelected = ticket.id === selectedTicketId;
                 return (
-                  <div
+                  <motion.div
                     key={ticket.id}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => setSelectedTicketId(ticket.id)}
                     className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
                       isSelected 
@@ -360,7 +441,7 @@ export const TechnicianWorkspace: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
               {filteredTickets.length === 0 && (
@@ -474,9 +555,36 @@ export const TechnicianWorkspace: React.FC = () => {
                              </div>
                              <div className="bg-slate-200/70 text-slate-900 p-2.5 rounded-lg rounded-tl-sm text-xs whitespace-pre-wrap leading-relaxed shadow-sm">
                                {activeTicket.description}
-                               <div className="mt-3">
+                               <div className="mt-3 flex items-center justify-between">
                                  <span className="bg-slate-300 text-slate-700 text-[10px] font-bold uppercase px-2 py-1 rounded-md">Original Report</span>
                                </div>
+
+                               {/* Initial Attachments */}
+                               {activeTicket.attachments && activeTicket.attachments.length > 0 && (
+                                 <div className="mt-2.5 pt-2 border-t border-slate-300/70 space-y-1.5">
+                                   <p className="text-[10px] font-bold text-slate-600 uppercase">Attachments ({activeTicket.attachments.length})</p>
+                                   {activeTicket.attachments.map(att => (
+                                     <a 
+                                       key={att.id || att.name} 
+                                       href={att.url} 
+                                       download={att.name}
+                                       target="_blank" 
+                                       rel="noreferrer"
+                                       className="flex items-center gap-2 p-1.5 rounded-md bg-white border border-slate-300 hover:border-blue-400 transition-colors group"
+                                     >
+                                       <div className="size-6 rounded bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                         {att.type?.startsWith('image/') ? (
+                                           <img src={att.url} alt={att.name} className="size-full object-cover" />
+                                         ) : (
+                                           <FileIcon className="size-3 text-slate-500" />
+                                         )}
+                                       </div>
+                                       <span className="text-[11px] font-medium text-slate-800 truncate flex-1">{att.name}</span>
+                                       <Download className="size-3 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                                     </a>
+                                   ))}
+                                 </div>
+                               )}
                              </div>
                            </div>
                          </div>
@@ -489,11 +597,33 @@ export const TechnicianWorkspace: React.FC = () => {
                            if (isNote) {
                              return (
                                <div key={msg.id} className="flex justify-center my-4">
-                                  <div className="flex items-start gap-2 max-w-lg bg-amber-50 border border-amber-200 p-2.5 rounded-lg text-sm text-amber-900 shadow-sm">
+                                  <div className="flex items-start gap-2 max-w-lg bg-amber-50 border border-amber-200 p-2.5 rounded-lg text-sm text-amber-900 shadow-sm w-full">
                                      <Lock className="size-3.5 shrink-0 text-amber-500 mt-0.5" />
-                                     <div>
-                                        <p className="font-bold text-xs text-amber-700 mb-1">{msg.author_name} (Internal Note)</p>
-                                        <p>{msg.body}</p>
+                                     <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                          <p className="font-bold text-xs text-amber-700">{msg.author_name} (Internal Note)</p>
+                                          <span className="text-[10px] text-amber-600/70">{new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                        </div>
+                                        {msg.body && <p className="text-xs whitespace-pre-wrap">{msg.body}</p>}
+
+                                        {msg.attachments && msg.attachments.length > 0 && (
+                                          <div className="mt-2 pt-2 border-t border-amber-200/60 space-y-1">
+                                            {msg.attachments.map(att => (
+                                              <a 
+                                                key={att.id || att.name} 
+                                                href={att.url} 
+                                                download={att.name}
+                                                target="_blank" 
+                                                rel="noreferrer"
+                                                className="flex items-center gap-2 p-1.5 rounded bg-white/70 border border-amber-200 hover:bg-white transition-colors group"
+                                              >
+                                                <FileIcon className="size-3 text-amber-600 shrink-0" />
+                                                <span className="text-[11px] text-amber-900 font-medium truncate flex-1">{att.name}</span>
+                                                <Download className="size-3 text-amber-600 opacity-60 group-hover:opacity-100 shrink-0" />
+                                              </a>
+                                            ))}
+                                          </div>
+                                        )}
                                      </div>
                                   </div>
                                </div>
@@ -510,8 +640,37 @@ export const TechnicianWorkspace: React.FC = () => {
                                    <span className="font-bold text-xs text-slate-900">{msg.author_name}</span>
                                    <span className="text-xs text-slate-400">· {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                  </div>
-                                 <div className={`p-2.5 rounded-lg text-xs whitespace-pre-wrap leading-relaxed shadow-sm text-left ${isMe ? 'bg-blue-200 text-blue-900 rounded-tr-sm' : 'bg-slate-200/70 text-slate-900 rounded-tl-sm'}`}>
-                                   {msg.body}
+                                 <div className={`p-2.5 rounded-lg text-xs whitespace-pre-wrap leading-relaxed shadow-sm text-left ${isMe ? 'bg-blue-100 text-blue-900 border border-blue-200 rounded-tr-sm' : 'bg-slate-200/70 text-slate-900 rounded-tl-sm'}`}>
+                                   {msg.body && <p>{msg.body}</p>}
+
+                                   {/* Attachments rendering for both sides */}
+                                   {msg.attachments && msg.attachments.length > 0 && (
+                                     <div className={`mt-2 pt-2 border-t space-y-1 ${isMe ? 'border-blue-200' : 'border-slate-300'}`}>
+                                       {msg.attachments.map(att => (
+                                         <a 
+                                           key={att.id || att.name} 
+                                           href={att.url} 
+                                           download={att.name}
+                                           target="_blank" 
+                                           rel="noreferrer"
+                                           className="flex items-center gap-2 p-1.5 rounded-md bg-white border border-slate-200 hover:border-blue-400 transition-colors group"
+                                         >
+                                           <div className="size-6 rounded bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                             {att.type?.startsWith('image/') ? (
+                                               <img src={att.url} alt={att.name} className="size-full object-cover" />
+                                             ) : (
+                                               <FileIcon className="size-3 text-slate-500" />
+                                             )}
+                                           </div>
+                                           <div className="flex-1 min-w-0 text-left">
+                                             <p className="text-[11px] font-medium text-slate-800 truncate">{att.name}</p>
+                                             <p className="text-[9px] text-slate-400">{formatBytes(att.size)}</p>
+                                           </div>
+                                           <Download className="size-3 text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
+                                         </a>
+                                       ))}
+                                     </div>
+                                   )}
                                  </div>
                                </div>
                              </div>
@@ -553,7 +712,8 @@ export const TechnicianWorkspace: React.FC = () => {
                          
                          {/* Quick Pills */}
                          <div className="flex-1 flex justify-end gap-2 overflow-x-auto">
-                            <button onClick={handleAIDraft} className="shrink-0 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-full transition-colors flex items-center gap-1">
+                            <button onClick={handleAIDraft} disabled={isDrafting} className="shrink-0 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-full transition-colors flex items-center gap-1 disabled:opacity-50">
+                               {isDrafting ? <Loader2 className="size-3 animate-spin" /> : null}
                                AI Suggested
                             </button>
                             {MACROS.map(m => (
@@ -563,26 +723,81 @@ export const TechnicianWorkspace: React.FC = () => {
                             ))}
                          </div>
                        </div>
+
+                       {/* Attached Files List */}
+                       {composerAttachments.length > 0 && (
+                         <div className="flex flex-wrap gap-2 pt-1">
+                           {composerAttachments.map(att => (
+                             <div key={att.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs">
+                               <FileIcon className="size-3 text-slate-500" />
+                               <span className="truncate max-w-[120px] font-medium text-slate-700">{att.file.name}</span>
+                               <button type="button" onClick={() => removeTechAttachment(att.id)} className="text-slate-400 hover:text-red-500 p-0.5">
+                                 <Trash2 className="size-3" />
+                               </button>
+                             </div>
+                           ))}
+                         </div>
+                       )}
+
+                       {/* Voice Error Notice */}
+                       {speechError && (
+                         <div className="flex items-center justify-between px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                           <div className="flex items-center gap-1.5">
+                             <AlertCircle className="size-3.5 text-amber-600 shrink-0" />
+                             <span>{speechError}</span>
+                           </div>
+                           <button onClick={clearSpeechError} className="text-amber-600 hover:text-amber-800 font-bold ml-2">Dismiss</button>
+                         </div>
+                       )}
                        
                        <form onSubmit={handleSendReply} className="relative">
                          <textarea
                            value={replyText}
                            onChange={e => setReplyText(e.target.value)}
-                           placeholder="Type your reply..."
+                           placeholder={isInternal ? "Write internal note (only visible to support agents)..." : "Type your reply to customer..."}
                            rows={3}
-                           className="w-full resize-none p-2 pb-10 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs outline-none focus:border-blue-500 transition-colors"
+                           className="w-full resize-none p-2 pb-11 pr-24 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs outline-none focus:border-blue-500 transition-colors"
                            onKeyDown={e => {
                              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                                handleSendReply(e);
                              }
                            }}
                          />
+
+                         <div className="absolute bottom-2.5 left-2 flex items-center gap-1.5">
+                           <label className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200 cursor-pointer transition-colors" title="Attach file">
+                             <Paperclip className="size-4" />
+                             <input type="file" multiple onChange={handleTechFileSelect} className="hidden" />
+                           </label>
+
+                           <button
+                             type="button"
+                             onClick={toggleVoiceInput}
+                             className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs ${
+                               isListening
+                                 ? 'bg-red-500 text-white animate-pulse'
+                                 : isTranscribing
+                                 ? 'bg-blue-100 text-blue-700'
+                                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'
+                             }`}
+                             title={isListening ? 'Stop recording' : 'Voice dictation'}
+                           >
+                             {isTranscribing ? (
+                               <Loader2 className="size-4 animate-spin" />
+                             ) : (
+                               <Mic className="size-4" />
+                             )}
+                             {isListening && <span className="font-bold text-[10px]">{recordingSeconds}s</span>}
+                           </button>
+                         </div>
+
                          <button
                            type="submit"
-                           disabled={!replyText.trim()}
-                           className="absolute bottom-3 right-3 bg-[#4c7db7] hover:bg-[#3b608f] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                           disabled={!replyText.trim() && composerAttachments.length === 0}
+                           className="absolute bottom-2.5 right-2 bg-[#4c7db7] hover:bg-[#3b608f] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                          >
-                           Send Message
+                           <Send className="size-3.5" />
+                           Send
                          </button>
                        </form>
                     </div>
