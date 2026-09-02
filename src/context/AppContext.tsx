@@ -31,12 +31,11 @@ import {
   updateNotificationInFirestore,
   purgeAllFirestoreData,
 } from '../lib/firestoreService';
-import { auth, googleProvider } from '../lib/firebase';
+import { auth, } from '../lib/firebase';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
-  signOut as fbSignOut,
+    signOut as fbSignOut,
 } from 'firebase/auth';
 
 export interface ToastItem {
@@ -80,7 +79,6 @@ interface AppContextType {
   markNotificationAsRead: (id: string) => Promise<void>;
   markAllNotificationsAsRead: () => Promise<void>;
   signIn: (email: string, password?: string) => Promise<boolean>;
-  signInWithGoogle: () => Promise<boolean>;
   signUp: (data: {
     email: string;
     password?: string;
@@ -816,29 +814,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const isDesignated = isDesignatedAdminEmail(email);
 
     try {
-      let uid = '';
-      try {
-        const fbCredential = await signInWithEmailAndPassword(auth, email, password);
-        uid = fbCredential.user.uid;
-      } catch (authErr: any) {
-        console.log('Firebase Auth sign in notice:', authErr?.code, authErr?.message);
-        // If email not found in Firebase Auth yet, try creating it automatically for a smooth experience
-        if (authErr?.code === 'auth/user-not-found' || authErr?.code === 'auth/invalid-credential') {
-          try {
-            const createCred = await createUserWithEmailAndPassword(auth, email, password);
-            uid = createCred.user.uid;
-          } catch (createErr: any) {
-            // If already exists or error, continue checking local or firestore profiles
-            console.log('Auto-create attempt notice:', createErr?.message);
-          }
-        }
-      }
+      const fbCredential = await signInWithEmailAndPassword(auth, email, password);
+      const uid = fbCredential.user.uid;
       
-      let existing = users.find((u) => (uid && u.id === uid) || u.email.toLowerCase() === email.toLowerCase());
+      let existing = users.find((u) => u.id === uid || u.email.toLowerCase() === email.toLowerCase());
       
       // If user is designated admin but profile doesn't exist yet, automatically generate it
       if (!existing && isDesignated) {
-        const adminUid = uid || `admin-${Date.now()}`;
+        const adminUid = uid;
         existing = {
           id: adminUid,
           email: DESIGNATED_ADMIN_EMAIL,
@@ -890,110 +873,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
       }
     } catch (err: any) {
-      console.log('Sign in general notice:', err?.message);
-      showToast('Login failed. Please verify your credentials.', 'error');
-      return false;
-    }
-  };
-
-  // Google Sign-In with Firebase Auth
-  const signInWithGoogle = async (): Promise<boolean> => {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
-      if (!fbUser || !fbUser.email) {
-        showToast('Google Sign-In failed: No email retrieved from Google account.', 'error');
-        return false;
-      }
-
-      const email = fbUser.email;
-      const displayName = fbUser.displayName || (isDesignatedAdminEmail(email) ? 'Philibane Awonke' : email.split('@')[0]);
-      const photoURL = fbUser.photoURL || undefined;
-      const isDesignated = isDesignatedAdminEmail(email);
-
-      let existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase() || u.id === fbUser.uid);
-      if (existing) {
-        if (existing.banned) {
-          showToast('This account has been suspended by an administrator.', 'error');
-          return false;
-        }
-        if (photoURL && !existing.avatar_url) {
-          await updateUserInFirestore(existing.id, { avatar_url: photoURL });
-        }
-        // Promote designated user to admin
-        if (isDesignated && (existing.role !== 'admin' || !existing.is_approved || !existing.email_verified)) {
-          existing = {
-            ...existing,
-            role: 'admin',
-            is_approved: true,
-            email_verified: true,
-          };
-          setUsers((prev) => prev.map((u) => u.id === existing!.id ? existing! : u));
-          updateUserInFirestore(existing.id, { role: 'admin', is_approved: true, email_verified: true });
-        }
-        setCurrentUser(existing);
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, existing.id);
-        setViewRoleState(existing.role);
-        localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, existing.role);
-        setActivePage('dashboard');
-        showToast(`Signed in with Google as ${existing.full_name}`, 'success');
-        return true;
-      }
-
-      const isFirstUser = users.length === 0;
-      const assignedRole: UserRole = (isFirstUser || isDesignated) ? 'admin' : 'user';
-
-      const newUser: UserProfile = {
-        id: fbUser.uid || `user-${Date.now()}`,
-        email,
-        full_name: displayName,
-        company: isDesignated ? 'TechnoResolve IT Administration' : 'Google Workspace User',
-        role: assignedRole,
-        is_approved: isFirstUser || isDesignated, // First user or designated is automatically approved
-        email_verified: true, // Google accounts are verified!
-        avatar_url: photoURL,
-        banned: false,
-        created_at: new Date().toISOString(),
-      };
-
-      setUsers((prev) => [...prev, newUser]);
-      await saveUserToFirestore(newUser);
-
-      if (!isFirstUser && !isDesignated) {
-        // Dispatch admin approval request notification
-        const adminNotif: AppNotification = {
-          id: `notif-${Date.now()}`,
-          user_id: 'admin',
-          title: 'Google Sign-In User Registered',
-          message: `${displayName} (${email}) signed in via Google and requires access review.`,
-          type: 'approval',
-          read: false,
-          created_at: new Date().toISOString(),
-          target_id: newUser.id,
-          link_page: 'users',
-        };
-        setNotifications((prev) => [adminNotif, ...prev]);
-        saveNotificationToFirestore(adminNotif);
-      }
-
-      setCurrentUser(newUser);
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, newUser.id);
-      setViewRoleState(assignedRole);
-      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, assignedRole);
-      setActivePage('dashboard');
-
-      if (isFirstUser || isDesignated) {
-        showToast('👑 Welcome! Granted full Administrator access.', 'success');
+      console.log('Sign in general notice:', err?.code, err?.message);
+      if (err?.code === 'auth/operation-not-allowed') {
+        showToast('Firebase Auth is disabled. Please enable Email/Password provider in the Firebase Console.', 'error');
+      } else if (err?.code === 'auth/user-not-found' || err?.code === 'auth/invalid-credential' || err?.code === 'auth/wrong-password') {
+        showToast('Login failed. Please verify your email and password.', 'error');
       } else {
-        showToast(`Welcome ${displayName}! Google authentication verified.`, 'success');
+        showToast(err?.message || 'Login failed. Please verify your credentials.', 'error');
       }
-      return true;
-    } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        return false;
-      }
-      console.warn('Google Sign-In error:', err);
-      showToast(`Google Sign-In: ${err.message || 'Authentication was interrupted.'}`, 'error');
       return false;
     }
   };
@@ -1041,19 +928,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const fbCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       uid = fbCredential.user.uid;
     } catch (authErr: any) {
-      console.log('Firebase Auth registration notice:', authErr?.message);
-      if (authErr?.code === 'auth/email-already-in-use') {
-        // Try sign in with this credential
-        try {
-          const cred = await signInWithEmailAndPassword(auth, data.email, data.password);
-          uid = cred.user.uid;
-        } catch {
-          uid = `user-${Date.now()}`;
-        }
+      console.log('Firebase Auth registration notice:', authErr?.code, authErr?.message);
+      if (authErr?.code === 'auth/operation-not-allowed') {
+        showToast('Firebase Auth is disabled. Please enable Email/Password provider in the Firebase Console.', 'error');
+      } else if (authErr?.code === 'auth/email-already-in-use') {
+        showToast('Email already in use. Please sign in instead.', 'error');
       } else {
-        // Generate a valid ID to ensure account creation is unblocked
-        uid = `user-${Date.now()}`;
+        showToast(authErr?.message || 'Registration failed.', 'error');
       }
+      return false; // MUST fail early. Do NOT proceed to write to Firestore with a fake UID!
     }
 
     const isFirstUser = users.length === 0;
@@ -1168,7 +1051,6 @@ Once verified, an administrator will review and activate your account access.`,
         markNotificationAsRead,
         markAllNotificationsAsRead,
         signIn,
-        signInWithGoogle,
         signUp,
         signOut,
         switchDemoUser,
