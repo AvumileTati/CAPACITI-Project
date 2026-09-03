@@ -11,7 +11,7 @@ service cloud.firestore {
     function existing() { return resource.data; }
     
     function isDesignatedAdmin() {
-      return isSignedIn() && request.auth.token.email != null && request.auth.token.email == 'tatiavumile@gmail.com';
+      return isSignedIn() && request.auth.token.email != null && (request.auth.token.email == 'tatiavumile@gmail.com' || request.auth.token.email == 'Tatiavumile@gmail.com');
     }
 
     // RBAC: Roles are stored in /users/{userId}
@@ -127,7 +127,10 @@ service cloud.firestore {
         && (
           isAdmin() ||
           isDesignatedAdmin() ||
-          (userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['full_name', 'company', 'avatar_url', 'phone', 'email_verified', 'verification_code']))
+          (userId == request.auth.uid && 
+           incoming().role == existing().role &&
+           incoming().is_approved == existing().is_approved &&
+           incoming().banned == existing().banned)
         );
         
       allow delete: if isAdmin();
