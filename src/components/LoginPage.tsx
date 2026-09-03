@@ -82,8 +82,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
               templateId,
               {
                 to_email: email,
-                to_name: fullName,
+                email: email,
+                user_email: email,
+                to: email,
+                recipient: email,
+                reply_to: email,
+                to_name: fullName || email.split('@')[0],
+                user_name: fullName || email.split('@')[0],
+                name: fullName || email.split('@')[0],
                 verification_code: otp,
+                otp: otp,
+                code: otp,
+                passcode: otp,
               },
               publicKey
             );
@@ -95,8 +105,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
           }
           setMode('verify');
         } catch (err: any) {
+          const errorMsg = err?.text || err?.message || 'Unknown error';
           console.error('Failed to send verification email:', err);
-          showToast('Failed to send verification email. Please try again later.', 'error');
+          showToast(`Failed to send verification email: ${errorMsg}`, 'error');
         }
       }
     } finally {

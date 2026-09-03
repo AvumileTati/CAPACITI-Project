@@ -494,9 +494,7 @@ export const CustomerPortal: React.FC = () => {
                       {currentUser?.role === 'admin' && <Shield className="size-3 text-amber-600" />}
                       <span className="capitalize">{currentUser?.role || 'user'}</span>
                     </span>
-                    {currentUser?.role === 'admin' && (
-                      <RoleSwitcher />
-                    )}
+                    <RoleSwitcher />
                   </div>
                 </div>
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">

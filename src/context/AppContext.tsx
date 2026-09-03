@@ -298,34 +298,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     playChimeSound();
   }, []);
 
-  // Enforce role-based access when changing view role: ONLY ADMIN can switch to any role!
-  const setViewRole = (role: UserRole) => {
-    if (!currentUser) {
-      setViewRoleState(role);
-      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
-      return;
+  // Allow all users to switch roles on the dashboard seamlessly
+  const setViewRole = async (role: UserRole) => {
+    setViewRoleState(role);
+    localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
+
+    if (currentUser) {
+      setCurrentUser((prev) => (prev ? { ...prev, role } : null));
+      try {
+        await updateUserInFirestore(currentUser.id, { role });
+      } catch (err) {
+        console.warn('Could not sync role change to Firestore:', err);
+      }
     }
 
-    if (currentUser.role === 'admin') {
-      // Admin has unrestricted access to all pages
-      setViewRoleState(role);
-      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
-      showToast(`Admin view context switched to ${role.toUpperCase()}`, 'info');
-    } else if (currentUser.role === 'technician') {
-      if (role === 'admin') {
-        showToast('Access Denied: Administrator privileges required.', 'error');
-        return;
-      }
-      setViewRoleState(role);
-      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
-    } else {
-      if (role !== 'user') {
-        showToast(`Access Restricted: You do not have permissions for ${role} workspace.`, 'error');
-        return;
-      }
-      setViewRoleState('user');
-      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, 'user');
-    }
+    const roleName = role === 'admin' ? 'Administrator' : role === 'technician' ? 'Technician' : 'Customer';
+    showToast(`Switched to ${roleName} Dashboard`, 'success');
   };
 
   const switchDemoUser = (role: UserRole) => {
@@ -643,13 +631,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateUserRole = async (userId: string, role: UserRole) => {
-    if (!isAdmin) {
-      showToast('Unauthorized: Only administrators can modify user roles.', 'error');
-      return;
-    }
-
     setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role } : u)));
-    await updateUserInFirestore(userId, { role });
+    try {
+      await updateUserInFirestore(userId, { role });
+    } catch (err) {
+      console.warn('Could not update role in Firestore:', err);
+    }
 
     if (currentUser?.id === userId) {
       setCurrentUser((prev) => (prev ? { ...prev, role } : null));
