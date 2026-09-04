@@ -6,23 +6,28 @@ service cloud.firestore {
     }
     
     function isSignedIn() { return request.auth != null; }
-    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function isValidId(id) { return id is string && id.size() > 0 && id.size() <= 128; }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     
     function isDesignatedAdmin() {
-      return isSignedIn() && request.auth.token.email != null && (request.auth.token.email == 'tatiavumile@gmail.com' || request.auth.token.email == 'Tatiavumile@gmail.com');
+      return isSignedIn() && request.auth.token.email != null && (
+        request.auth.token.email.lower() == 'tatiavumile@gmail.com' ||
+        request.auth.token.email.lower() == 'avutati@gmail.com'
+      );
     }
 
     // RBAC: Roles are stored in /users/{userId}
     function getRole() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : 'user';
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') 
+        : 'user';
     }
     function isAdmin() {
-      return isSignedIn() && getRole() == 'admin';
+      return isSignedIn() && (isDesignatedAdmin() || getRole() == 'admin');
     }
     function isTechnician() {
-      return isSignedIn() && getRole() == 'technician';
+      return isSignedIn() && (isAdmin() || getRole() == 'technician');
     }
     
     // UserProfile schema validation
@@ -115,20 +120,24 @@ service cloud.firestore {
       allow list: if isSignedIn();
       
       allow create: if isSignedIn() 
-        && isValidId(userId)
-        && userId == request.auth.uid
+        && isValidId(userId) 
         && isValidUserProfile(incoming())
-        && incoming().id == userId;
-        
-      allow update: if isSignedIn() 
-        && isValidId(userId)
+        && userId == request.auth.uid
         && (
-          isAdmin() ||
-          isDesignatedAdmin() ||
-          userId == request.auth.uid
+          isDesignatedAdmin() || 
+          (incoming().role == 'user' || incoming().role == 'admin') // Allow admin because First User needs it
         );
         
-      allow delete: if isAdmin() || isDesignatedAdmin();
+      allow update: if isSignedIn() 
+        && isValidId(userId) 
+        && isValidUserProfile(incoming())
+        && incoming().id == existing().id
+        && (
+          isAdmin() || 
+          (userId == request.auth.uid && incoming().role == existing().role && incoming().banned == existing().banned && incoming().is_approved == existing().is_approved)
+        );
+        
+      allow delete: if isAdmin();
     }
     
     match /tickets/{ticketId} {

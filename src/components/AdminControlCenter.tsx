@@ -52,6 +52,8 @@ import { TicketChatModal } from './TicketChatModal';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const AdminControlCenter: React.FC = () => {
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  
   const {
     currentUser,
     tickets,
@@ -62,6 +64,7 @@ export const AdminControlCenter: React.FC = () => {
     pendingUsersCount,
     updateUserRole,
     updateUserStatus,
+    deleteUser,
     approveUser,
     rejectUser,
     signOut,
@@ -939,6 +942,32 @@ export const AdminControlCenter: React.FC = () => {
                                 >
                                   {u.banned ? 'Restore' : 'Suspend'}
                                 </button>
+                                {userToDelete === u.id ? (
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => {
+                                        deleteUser(u.id);
+                                        setUserToDelete(null);
+                                      }}
+                                      className="px-3 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg cursor-pointer shadow-sm animate-pulse"
+                                    >
+                                      Confirm Delete
+                                    </button>
+                                    <button
+                                      onClick={() => setUserToDelete(null)}
+                                      className="px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-300 hover:bg-slate-100 rounded-lg cursor-pointer"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => setUserToDelete(u.id)}
+                                    className="px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg cursor-pointer transition-colors"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
                               </td>
                             </tr>
                           ))
@@ -1273,7 +1302,8 @@ export const AdminControlCenter: React.FC = () => {
                     </div>
                     <button 
                       onClick={() => {
-                        if (confirm('Are you absolutely sure you want to clear the entire database? This cannot be undone.')) {
+                        const code = prompt('Type "DELETE" to confirm clearing the entire database:');
+                        if (code === 'DELETE') {
                           purgeAllData();
                         }
                       }}

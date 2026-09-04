@@ -7,7 +7,7 @@ import {
   Bell, LogOut, Search, SlidersHorizontal, Copy, UserPlus,
   UserCheck, ArrowUpRight, CheckCircle, Lock, Send, Cpu, User,
   RefreshCw, CheckCircle2, Paperclip, Trash2, Download, FileText as FileIcon,
-  Mic, Loader2, AlertCircle, Flame, AlertTriangle, Zap
+  Mic, Loader2, AlertCircle, Flame, AlertTriangle, Zap, Sun, Moon
 } from 'lucide-react';
 import { RoleSwitcher } from './RoleSwitcher';
 import { AssignAgentModal } from './AssignAgentModal';
@@ -45,6 +45,15 @@ export const TechnicianWorkspace: React.FC = () => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [composerAttachments, setComposerAttachments] = useState<{ id: string; file: File; previewUrl: string; size: number }[]>([]);
+
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('tech_dark_mode');
+    return saved !== null ? saved === 'true' : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tech_dark_mode', String(isDarkMode));
+  }, [isDarkMode]);
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -378,17 +387,17 @@ export const TechnicianWorkspace: React.FC = () => {
   const resolvedCount = tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
 
   return (
-    <div className="flex h-screen w-full bg-white text-slate-900 overflow-hidden font-sans">
+    <div className={`flex h-screen w-full overflow-hidden font-sans transition-colors duration-200 ${isDarkMode ? 'bg-[#0b1120] text-slate-100' : 'bg-white text-slate-900'}`}>
       
       {/* 1. LEFT SIDEBAR */}
-      <aside className="w-[200px] border-r border-slate-200 flex flex-col bg-slate-50 shrink-0">
+      <aside className={`w-[200px] border-r flex flex-col shrink-0 transition-colors duration-200 ${isDarkMode ? 'bg-[#0f172a] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
         {/* Logo */}
         <div className="h-12 flex items-center px-4 gap-3 shrink-0">
           <div className="flex items-center gap-1.5">
-             <span className="text-lg font-black text-blue-600">T</span>
+             <span className="text-lg font-black text-blue-500">T</span>
              <div className="leading-tight">
-               <h1 className="font-bold text-sm text-slate-800">Technician</h1>
-               <h1 className="font-bold text-sm text-slate-800">Cockpit</h1>
+               <h1 className={`font-bold text-sm ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>Technician</h1>
+               <h1 className={`font-bold text-sm ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>Cockpit</h1>
              </div>
           </div>
         </div>
@@ -396,18 +405,18 @@ export const TechnicianWorkspace: React.FC = () => {
         {/* Navigation */}
         <nav className="flex-1 px-4 py-4 space-y-1">
 
-          <button onClick={() => setFilterMode('mine')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'mine' ? 'bg-blue-100/50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>
+          <button onClick={() => setFilterMode('mine')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'mine' ? (isDarkMode ? 'bg-blue-900/60 text-blue-300 font-bold border border-blue-800/60' : 'bg-blue-100/50 text-blue-700 font-bold') : (isDarkMode ? 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-200' : 'text-slate-600 hover:bg-slate-100')}`}>
             <div className="flex items-center gap-3"><TicketIcon className="size-3.5" /> My Tickets</div>
-            {myTicketsCount > 0 && <span className="bg-rose-100 text-rose-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{myTicketsCount}</span>}
+            {myTicketsCount > 0 && <span className="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">{myTicketsCount}</span>}
           </button>
           
-          <button onClick={() => setFilterMode('all')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'all' ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}>
+          <button onClick={() => setFilterMode('all')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'all' ? (isDarkMode ? 'bg-blue-600 text-white font-bold shadow-xs' : 'bg-blue-100 text-blue-700 font-bold') : (isDarkMode ? 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-200' : 'text-slate-600 hover:bg-slate-100')}`}>
             <div className="flex items-center gap-3"><List className="size-3.5" /> Team Queue</div>
-            {teamQueueCount > 0 && <span className="bg-blue-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{teamQueueCount}</span>}
+            {teamQueueCount > 0 && <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{teamQueueCount}</span>}
           </button>
 
-          <button onClick={() => setFilterMode('escalated')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'escalated' ? 'bg-rose-100 text-rose-800 font-bold' : 'text-slate-600 hover:bg-slate-100'}`}>
-            <div className="flex items-center gap-3"><ArrowUpRight className="size-3.5 text-rose-600" /> Escalated</div>
+          <button onClick={() => setFilterMode('escalated')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'escalated' ? (isDarkMode ? 'bg-rose-950/80 text-rose-200 font-bold border border-rose-800' : 'bg-rose-100 text-rose-800 font-bold') : (isDarkMode ? 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-200' : 'text-slate-600 hover:bg-slate-100')}`}>
+            <div className="flex items-center gap-3"><ArrowUpRight className="size-3.5 text-rose-500" /> Escalated</div>
             {escalatedCount > 0 && (
               <motion.span
                 animate={{ scale: [1, 1.15, 1] }}
@@ -420,8 +429,8 @@ export const TechnicianWorkspace: React.FC = () => {
             )}
           </button>
 
-          <button onClick={() => setFilterMode('resolved')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'resolved' ? 'bg-emerald-100 text-emerald-800 font-bold' : 'text-slate-600 hover:bg-slate-100'}`}>
-            <div className="flex items-center gap-3"><CheckCircle2 className="size-3.5 text-emerald-600" /> Resolved</div>
+          <button onClick={() => setFilterMode('resolved')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'resolved' ? (isDarkMode ? 'bg-emerald-950/80 text-emerald-200 font-bold border border-emerald-800' : 'bg-emerald-100 text-emerald-800 font-bold') : (isDarkMode ? 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-200' : 'text-slate-600 hover:bg-slate-100')}`}>
+            <div className="flex items-center gap-3"><CheckCircle2 className="size-3.5 text-emerald-500" /> Resolved</div>
             {resolvedCount > 0 && (
               <span className="bg-emerald-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-2xs">
                 {resolvedCount}
@@ -430,35 +439,66 @@ export const TechnicianWorkspace: React.FC = () => {
           </button>
 
         </nav>
+
+        {/* Sidebar Dark Mode Quick Toggle */}
+        <div className={`p-3 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              isDarkMode
+                ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700'
+                : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {isDarkMode ? <Sun className="size-3.5 text-amber-400" /> : <Moon className="size-3.5 text-slate-600" />}
+              <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+            </div>
+          </button>
+        </div>
       </aside>
 
       {/* 2. MAIN CONTENT */}
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* Top Navbar */}
-        <header className="h-12 border-b border-slate-200 bg-white flex items-center justify-end px-4 gap-4 shrink-0">
+        <header className={`h-12 border-b flex items-center justify-end px-4 gap-3 shrink-0 transition-colors duration-200 ${isDarkMode ? 'bg-[#0f172a] border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'}`}>
           <RoleSwitcher />
+
+          {/* Theme Toggle in Header */}
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer ${
+              isDarkMode
+                ? 'bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700'
+                : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            {isDarkMode ? <Sun className="size-3.5 text-amber-400" /> : <Moon className="size-3.5 text-slate-600" />}
+            <span className="text-[11px] font-bold">{isDarkMode ? 'Light' : 'Dark'}</span>
+          </button>
           
-          <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-full py-1.5 px-3">
-             <div className="size-6 rounded-full text-[10px] bg-slate-300 flex items-center justify-center text-xs font-bold text-slate-700 uppercase">
+          <div className={`flex items-center gap-3 border rounded-full py-1.5 px-3 ${isDarkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+             <div className={`size-6 rounded-full text-[10px] flex items-center justify-center text-xs font-bold uppercase ${isDarkMode ? 'bg-slate-700 text-slate-200' : 'bg-slate-300 text-slate-700'}`}>
                 {currentUser?.full_name?.charAt(0) || 'A'}
              </div>
              <div className="leading-tight pr-2 text-left">
-               <p className="text-xs font-bold text-slate-800">{currentUser?.full_name || 'Avumile Tati'}</p>
+               <p className={`text-xs font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>{currentUser?.full_name || 'Avumile Tati'}</p>
                <div className="flex items-center gap-1">
-                 <p className="text-[10px] text-slate-500">Live Cloud Sync</p>
+                 <p className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Live Cloud Sync</p>
                  <span className="size-1.5 rounded-full bg-emerald-500"></span>
                </div>
              </div>
-             <Settings className="size-3.5 text-slate-500 cursor-pointer hover:text-slate-700" />
+             <Settings className={`size-3.5 cursor-pointer ${isDarkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`} />
           </div>
           
-          <button onClick={() => setIsNotificationCenterOpen(true)} className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
+          <button onClick={() => setIsNotificationCenterOpen(true)} className={`relative p-2 rounded-full transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-100'}`}>
             <Bell className="size-5" />
             <span className="absolute top-1.5 right-1.5 size-3.5 bg-blue-600 border-2 border-white rounded-full text-[8px] font-bold text-white flex items-center justify-center">1</span>
           </button>
 
-          <button onClick={signOut} className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+          <button onClick={signOut} className={`flex items-center gap-2 text-sm font-semibold transition-colors ${isDarkMode ? 'text-slate-400 hover:text-slate-100' : 'text-slate-600 hover:text-slate-900'}`}>
             <LogOut className="size-3.5" /> Sign Out
           </button>
         </header>
@@ -467,31 +507,40 @@ export const TechnicianWorkspace: React.FC = () => {
         <div className="flex-1 flex overflow-hidden">
           
           {/* Middle Column: Ticket List */}
-          <div className="w-[280px] border-r border-slate-200 flex flex-col bg-white shrink-0">
+          <div className={`w-[280px] border-r flex flex-col shrink-0 transition-colors duration-200 ${isDarkMode ? 'bg-[#0f172a] border-slate-800' : 'bg-white border-slate-200'}`}>
             {/* Search/Filter Header */}
-            <div className="p-3 border-b border-slate-200 space-y-2.5 shrink-0">
+            <div className={`p-3 border-b space-y-2.5 shrink-0 ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
               <div className="flex items-center justify-between">
-                <h2 className="font-bold text-sm text-slate-800">Tickets Queue</h2>
-                <span className="text-[11px] font-semibold text-slate-500">
+                <h2 className={`font-bold text-sm ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>Tickets Queue</h2>
+                <span className={`text-[11px] font-semibold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                   {filteredTickets.length} of {tickets.length}
                 </span>
               </div>
               
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className={`size-3.5 absolute left-3 top-1/2 -translate-y-1/2 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search ID, title, user..."
-                    className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                    className={`w-full pl-9 pr-3 py-1.5 rounded-lg border text-xs outline-none transition-all ${
+                      isDarkMode 
+                        ? 'bg-[#1e293b] border-slate-700 text-slate-100 placeholder-slate-500 focus:border-blue-500' 
+                        : 'border-slate-200 text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                    }`}
                   />
                 </div>
                 <button 
                   onClick={() => setShowFilters(!showFilters)}
                   title="Advanced Filters"
-                  className={`p-1.5 border rounded-lg transition-colors ${showFilters ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                  className={`p-1.5 border rounded-lg transition-colors cursor-pointer ${
+                    showFilters 
+                      ? isDarkMode ? 'border-blue-500 bg-blue-950/60 text-blue-300' : 'border-blue-500 bg-blue-50 text-blue-600'
+                      : isDarkMode ? 'border-slate-700 text-slate-400 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
                    <SlidersHorizontal className="size-3.5" />
                 </button>
               </div>
@@ -500,30 +549,30 @@ export const TechnicianWorkspace: React.FC = () => {
               <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none text-[11px]">
                 <button
                   onClick={() => setFilterMode('all')}
-                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 transition-colors ${
+                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
                     filterMode === 'all'
                       ? 'bg-blue-600 text-white shadow-2xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
                   All ({teamQueueCount})
                 </button>
                 <button
                   onClick={() => setFilterMode('mine')}
-                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 transition-colors ${
+                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 transition-colors cursor-pointer ${
                     filterMode === 'mine'
                       ? 'bg-blue-600 text-white shadow-2xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
                   Mine ({myTicketsCount})
                 </button>
                 <button
                   onClick={() => setFilterMode('escalated')}
-                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 flex items-center gap-1 transition-colors ${
+                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 flex items-center gap-1 transition-colors cursor-pointer ${
                     filterMode === 'escalated'
                       ? 'bg-rose-600 text-white shadow-2xs'
-                      : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200/60'
+                      : isDarkMode ? 'bg-rose-950/40 text-rose-300 hover:bg-rose-900/60 border border-rose-800/60' : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200/60'
                   }`}
                 >
                   <Flame className="size-2.5" />
@@ -531,10 +580,10 @@ export const TechnicianWorkspace: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setFilterMode('resolved')}
-                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 flex items-center gap-1 transition-colors ${
+                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 flex items-center gap-1 transition-colors cursor-pointer ${
                     filterMode === 'resolved'
                       ? 'bg-emerald-600 text-white shadow-2xs'
-                      : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60'
+                      : isDarkMode ? 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/60 border border-emerald-800/60' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60'
                   }`}
                 >
                   <CheckCircle2 className="size-2.5" />
@@ -543,13 +592,13 @@ export const TechnicianWorkspace: React.FC = () => {
               </div>
               
               {showFilters && (
-                <div className="pt-2 space-y-3 border-t border-slate-100 mt-2">
+                <div className={`pt-2 space-y-3 border-t mt-2 ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Category</label>
+                    <label className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Category</label>
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="w-full p-2 rounded-lg border border-slate-200 text-xs focus:border-blue-500 outline-none bg-white"
+                      className={`w-full p-2 rounded-lg border text-xs outline-none ${isDarkMode ? 'bg-[#1e293b] border-slate-700 text-slate-100' : 'bg-white border-slate-200'}`}
                     >
                       <option value="all">All Categories</option>
                       {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -558,11 +607,11 @@ export const TechnicianWorkspace: React.FC = () => {
                   
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Priority</label>
+                      <label className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Priority</label>
                       <select
                         value={priorityFilter}
                         onChange={(e) => setPriorityFilter(e.target.value)}
-                        className="w-full p-2 rounded-lg border border-slate-200 text-xs focus:border-blue-500 outline-none bg-white"
+                        className={`w-full p-2 rounded-lg border text-xs outline-none ${isDarkMode ? 'bg-[#1e293b] border-slate-700 text-slate-100' : 'bg-white border-slate-200'}`}
                       >
                         <option value="all">All</option>
                         <option value="low">Low</option>
@@ -572,11 +621,11 @@ export const TechnicianWorkspace: React.FC = () => {
                       </select>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Status</label>
+                      <label className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Status</label>
                       <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="w-full p-2 rounded-lg border border-slate-200 text-xs focus:border-blue-500 outline-none bg-white"
+                        className={`w-full p-2 rounded-lg border text-xs outline-none ${isDarkMode ? 'bg-[#1e293b] border-slate-700 text-slate-100' : 'bg-white border-slate-200'}`}
                       >
                         <option value="all">All</option>
                         <option value="new">New</option>
@@ -596,7 +645,7 @@ export const TechnicianWorkspace: React.FC = () => {
                         setPriorityFilter('all');
                         setStatusFilter('all');
                       }}
-                      className="text-[10px] font-bold text-slate-400 hover:text-slate-600 w-full text-right"
+                      className="text-[10px] font-bold text-slate-400 hover:text-slate-200 w-full text-right cursor-pointer"
                     >
                       Clear Filters
                     </button>
@@ -606,7 +655,7 @@ export const TechnicianWorkspace: React.FC = () => {
             </div>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50/50">
+            <div className={`flex-1 overflow-y-auto p-3 space-y-2 ${isDarkMode ? 'bg-[#0b1120]' : 'bg-slate-50/50'}`}>
               {filteredTickets.map(ticket => {
                 const isSelected = ticket.id === selectedTicketId;
                 const isUrgent = ticket.priority === 'urgent';
@@ -622,38 +671,38 @@ export const TechnicianWorkspace: React.FC = () => {
                     className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
                       isSelected 
                         ? isUrgent || isEscalated
-                          ? 'border-red-400 bg-red-50/40 shadow-sm border-l-4 border-l-red-500'
+                          ? isDarkMode ? 'border-red-500 bg-red-950/40 shadow-sm border-l-4 border-l-red-500 ring-1 ring-red-500/30' : 'border-red-400 bg-red-50/40 shadow-sm border-l-4 border-l-red-500'
                           : isResolved
-                          ? 'border-emerald-400 bg-emerald-50/40 shadow-sm border-l-4 border-l-emerald-500'
-                          : 'border-blue-300 bg-blue-50 shadow-sm'
+                          ? isDarkMode ? 'border-emerald-500 bg-emerald-950/40 shadow-sm border-l-4 border-l-emerald-500 ring-1 ring-emerald-500/30' : 'border-emerald-400 bg-emerald-50/40 shadow-sm border-l-4 border-l-emerald-500'
+                          : isDarkMode ? 'border-blue-500 bg-[#1e293b] shadow-md ring-1 ring-blue-500/40 text-slate-100' : 'border-blue-300 bg-blue-50 shadow-sm'
                         : isUrgent || isEscalated
-                        ? 'border-red-200/90 bg-red-50/20 border-l-4 border-l-red-500 hover:border-red-300'
+                        ? isDarkMode ? 'border-red-900/60 bg-red-950/20 border-l-4 border-l-red-500 hover:border-red-800' : 'border-red-200/90 bg-red-50/20 border-l-4 border-l-red-500 hover:border-red-300'
                         : isResolved
-                        ? 'border-emerald-200/80 bg-emerald-50/15 border-l-4 border-l-emerald-500 hover:border-emerald-300'
-                        : 'border-slate-200 bg-white hover:border-blue-200'
+                        ? isDarkMode ? 'border-emerald-900/60 bg-emerald-950/20 border-l-4 border-l-emerald-500 hover:border-emerald-800' : 'border-emerald-200/80 bg-emerald-50/15 border-l-4 border-l-emerald-500 hover:border-emerald-300'
+                        : isDarkMode ? 'border-slate-800 bg-[#1e293b]/70 hover:border-slate-700 text-slate-200' : 'border-slate-200 bg-white hover:border-blue-200'
                     }`}
                   >
                     <div className="flex gap-3">
                       <div className={`size-6 rounded-full text-[10px] shrink-0 overflow-hidden flex items-center justify-center font-bold text-xs ${
                         isUrgent || isEscalated 
-                          ? 'bg-red-100 text-red-700' 
+                          ? 'bg-red-500/20 text-red-400' 
                           : isResolved
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-slate-200 text-slate-500'
+                          ? 'bg-emerald-500/20 text-emerald-400'
+                          : isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-500'
                       }`}>
-                         {isResolved ? <CheckCircle2 className="size-3.5 text-emerald-600" /> : ticket.requester_name.charAt(0)}
+                         {isResolved ? <CheckCircle2 className="size-3.5 text-emerald-500" /> : ticket.requester_name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center justify-between">
-                           <span className="font-bold text-sm text-slate-800 line-clamp-1">{ticket.id}</span>
+                           <span className={`font-bold text-sm line-clamp-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>{ticket.id}</span>
                            {isResolved && (
-                             <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
+                             <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${isDarkMode ? 'bg-emerald-900/60 text-emerald-300' : 'text-emerald-700 bg-emerald-100'}`}>
                                Resolved
                              </span>
                            )}
                         </div>
-                        <p className="text-sm text-slate-900 font-semibold line-clamp-1">{ticket.title}</p>
-                        <p className="text-xs text-slate-500">{getCategoryLabel(ticket.category)}</p>
+                        <p className={`text-sm font-semibold line-clamp-1 ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>{ticket.title}</p>
+                        <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{getCategoryLabel(ticket.category)}</p>
                         <div className="flex items-center justify-between pt-2">
                            {getPriorityBadge(ticket.priority)}
                            {getStatusBadge(ticket.status)}
@@ -664,10 +713,10 @@ export const TechnicianWorkspace: React.FC = () => {
                 );
               })}
               {filteredTickets.length === 0 && (
-                <div className="text-center p-8 text-sm text-slate-500 space-y-2">
-                  <CheckCircle2 className="size-8 text-slate-300 mx-auto" />
-                  <p className="font-semibold text-slate-700">No tickets found</p>
-                  <p className="text-xs text-slate-400">
+                <div className={`text-center p-8 text-sm space-y-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <CheckCircle2 className={`size-8 mx-auto ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`} />
+                  <p className={`font-semibold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>No tickets found</p>
+                  <p className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                     {filterMode === 'resolved'
                       ? 'No tickets currently marked as resolved.'
                       : 'Try adjusting your filters or search query.'}
@@ -678,14 +727,14 @@ export const TechnicianWorkspace: React.FC = () => {
           </div>
 
           {/* Right Column: Ticket Details */}
-          <div className="flex-1 flex flex-col min-w-0 bg-white">
+          <div className={`flex-1 flex flex-col min-w-0 transition-colors duration-200 ${isDarkMode ? 'bg-[#0f172a] text-slate-100' : 'bg-white text-slate-900'}`}>
             {activeTicket ? (
               <>
                 {/* Details Header */}
-                <div className="p-3 border-b border-slate-200 shrink-0 space-y-4">
+                <div className={`p-3 border-b shrink-0 space-y-4 ${isDarkMode ? 'border-slate-800 bg-[#0f172a]' : 'border-slate-200 bg-white'}`}>
                   {/* Title */}
                   <div className="flex items-center flex-wrap gap-3">
-                    <h2 className="text-lg font-bold text-slate-900 tracking-tight">{activeTicket.title}</h2>
+                    <h2 className={`text-lg font-bold tracking-tight ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{activeTicket.title}</h2>
                     {getPriorityBadge(activeTicket.priority)}
                     {getStatusBadge(activeTicket.status)}
                   </div>
@@ -693,58 +742,58 @@ export const TechnicianWorkspace: React.FC = () => {
                   {/* 3 Data Columns */}
                   <div className="grid grid-cols-3 gap-4 pt-2">
                     <div className="space-y-2">
-                      <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
+                      <div className={`flex items-center gap-1.5 text-xs font-semibold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                          <User className="size-3.5" /> Requester
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="size-6 rounded-full text-[10px] bg-slate-200 flex items-center justify-center font-bold text-slate-600 uppercase">
+                        <div className={`size-6 rounded-full text-[10px] flex items-center justify-center font-bold uppercase ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-600'}`}>
                           {activeTicket.requester_name.charAt(0)}
                         </div>
                         <div className="leading-tight">
-                          <p className="font-bold text-xs text-slate-900">{activeTicket.requester_name}</p>
-                          <div className="flex items-center gap-1 text-xs text-slate-500">
-                            {activeTicket.requester_email} <Copy className="size-3 cursor-pointer hover:text-slate-800" />
+                          <p className={`font-bold text-xs ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{activeTicket.requester_name}</p>
+                          <div className={`flex items-center gap-1 text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                            {activeTicket.requester_email} <Copy className="size-3 cursor-pointer hover:text-blue-400" />
                           </div>
                         </div>
                       </div>
                     </div>
                     
                     <div className="space-y-2">
-                      <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
+                      <div className={`flex items-center gap-1.5 text-xs font-semibold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                          <UserCheck className="size-3.5" /> Assignee
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="size-6 rounded-full text-[10px] bg-slate-200 flex items-center justify-center font-bold text-slate-600 uppercase">
+                        <div className={`size-6 rounded-full text-[10px] flex items-center justify-center font-bold uppercase ${isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-600'}`}>
                            {activeTicket.assigned_name ? activeTicket.assigned_name.charAt(0) : '?'}
                         </div>
                         <div className="leading-tight">
-                          <p className="font-bold text-xs text-slate-900">{activeTicket.assigned_name || 'Unassigned'}</p>
-                          <button onClick={() => setIsAssignModalOpen(true)} className="text-xs text-blue-600 font-bold hover:underline">Assign Agent</button>
+                          <p className={`font-bold text-xs ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{activeTicket.assigned_name || 'Unassigned'}</p>
+                          <button onClick={() => setIsAssignModalOpen(true)} className="text-xs text-blue-400 font-bold hover:underline cursor-pointer">Assign Agent</button>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-1 text-xs border-l border-slate-200 pl-6">
-                       <div className="flex items-center gap-1.5 text-slate-500 font-semibold mb-2">
+                    <div className={`space-y-1 text-xs border-l pl-6 ${isDarkMode ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-600'}`}>
+                       <div className={`flex items-center gap-1.5 font-semibold mb-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                          <TicketIcon className="size-3.5" /> Ticket Info
                        </div>
-                       <p className="flex justify-between"><span className="text-slate-500">Category:</span> <span className="font-medium text-slate-900 capitalize">{activeTicket.category}</span></p>
-                       <p className="flex justify-between"><span className="text-slate-500">Created Date:</span> <span className="font-medium text-slate-900">{new Date(activeTicket.created_at).toLocaleDateString()}</span></p>
-                       <p className="flex justify-between items-center"><span className="text-slate-500">SLA Status:</span> <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">Green</span></p>
+                       <p className="flex justify-between"><span className={isDarkMode ? 'text-slate-400' : 'text-slate-500'}>Category:</span> <span className={`font-medium capitalize ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>{activeTicket.category}</span></p>
+                       <p className="flex justify-between"><span className={isDarkMode ? 'text-slate-400' : 'text-slate-500'}>Created Date:</span> <span className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>{new Date(activeTicket.created_at).toLocaleDateString()}</span></p>
+                       <p className="flex justify-between items-center"><span className={isDarkMode ? 'text-slate-400' : 'text-slate-500'}>SLA Status:</span> <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold text-[10px]">Green</span></p>
                     </div>
                   </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex items-center justify-between px-4 border-b border-slate-200 shrink-0">
+                <div className={`flex items-center justify-between px-4 border-b shrink-0 ${isDarkMode ? 'border-slate-800 bg-[#0f172a]' : 'border-slate-200 bg-white'}`}>
                   <div className="flex items-center gap-4">
-                    <button onClick={() => setInspectorTab('discussion')} className={`py-3 text-xs font-bold border-b-2 transition-colors ${inspectorTab === 'discussion' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+                    <button onClick={() => setInspectorTab('discussion')} className={`py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer ${inspectorTab === 'discussion' ? 'border-blue-500 text-blue-400' : isDarkMode ? 'border-transparent text-slate-400 hover:text-slate-200' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
                       Activity Feed
                     </button>
-                    <button onClick={() => setInspectorTab('ai_intel')} className={`py-3 text-xs font-bold border-b-2 transition-colors ${inspectorTab === 'ai_intel' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+                    <button onClick={() => setInspectorTab('ai_intel')} className={`py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer ${inspectorTab === 'ai_intel' ? 'border-blue-500 text-blue-400' : isDarkMode ? 'border-transparent text-slate-400 hover:text-slate-200' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
                       AI Insights (91%)
                     </button>
-                    <button onClick={() => setInspectorTab('requester')} className={`py-3 text-xs font-bold border-b-2 transition-colors ${inspectorTab === 'requester' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+                    <button onClick={() => setInspectorTab('requester')} className={`py-3 text-xs font-bold border-b-2 transition-colors cursor-pointer ${inspectorTab === 'requester' ? 'border-blue-500 text-blue-400' : isDarkMode ? 'border-transparent text-slate-400 hover:text-slate-200' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
                       Requester Profile
                     </button>
                   </div>
@@ -752,7 +801,11 @@ export const TechnicianWorkspace: React.FC = () => {
                   <select 
                     value={activeTicket.status}
                     onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
-                    className="border border-slate-200 rounded-lg px-2 py-1 text-xs font-medium text-slate-700 outline-none bg-white"
+                    className={`border rounded-lg px-2 py-1 text-xs font-medium outline-none cursor-pointer ${
+                      isDarkMode 
+                        ? 'bg-[#1e293b] border-slate-700 text-slate-200' 
+                        : 'border-slate-200 bg-white text-slate-700'
+                    }`}
                   >
                     <option value="new">Status: New</option>
                     <option value="in_progress">Status: In Progress</option>
@@ -763,16 +816,20 @@ export const TechnicianWorkspace: React.FC = () => {
 
                 {/* Main Content Area based on Tab */}
                 {inspectorTab === 'discussion' && (
-                  <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc]">
+                  <div className={`flex-1 flex flex-col min-h-0 ${isDarkMode ? 'bg-[#070b14]' : 'bg-[#f8fafc]'}`}>
                     
                     {/* Resolution Banner */}
                     {(activeTicket.status === 'resolved' || activeTicket.status === 'closed') && (
-                      <div className="mx-4 mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-3 text-xs shadow-2xs">
+                      <div className={`mx-4 mt-3 p-3 rounded-xl border flex items-center justify-between gap-3 text-xs shadow-2xs ${
+                        isDarkMode 
+                          ? 'bg-emerald-950/40 border-emerald-800 text-emerald-200' 
+                          : 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                      }`}>
                         <div className="flex items-center gap-2.5">
-                          <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                          <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
                           <div>
-                            <p className="font-bold text-emerald-950">Ticket Marked as Resolved</p>
-                            <p className="text-[11px] text-emerald-700">
+                            <p className="font-bold">Ticket Marked as Resolved</p>
+                            <p className={`text-[11px] ${isDarkMode ? 'text-emerald-300/80' : 'text-emerald-700'}`}>
                               {activeTicket.resolved_at 
                                 ? `Resolved on ${new Date(activeTicket.resolved_at).toLocaleString()}` 
                                 : 'This request is successfully resolved.'}
@@ -794,24 +851,32 @@ export const TechnicianWorkspace: React.FC = () => {
                          
                          {/* Customer Original */}
                          <div className="flex gap-3">
-                           <div className="size-6 rounded-full text-[10px] bg-slate-300 text-xs shrink-0 flex items-center justify-center font-bold text-slate-600">
+                           <div className={`size-6 rounded-full text-[10px] shrink-0 flex items-center justify-center font-bold ${
+                             isDarkMode ? 'bg-slate-700 text-slate-200' : 'bg-slate-300 text-slate-600'
+                           }`}>
                              {activeTicket.requester_name.charAt(0)}
                            </div>
                            <div className="max-w-[75%] space-y-1">
                              <div className="flex items-center gap-2">
-                               <span className="font-bold text-xs text-slate-900">{activeTicket.requester_name}</span>
-                               <span className="text-xs text-slate-400">· {new Date(activeTicket.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                               <span className={`font-bold text-xs ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>{activeTicket.requester_name}</span>
+                               <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>· {new Date(activeTicket.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                              </div>
-                             <div className="bg-slate-200/70 text-slate-900 p-2.5 rounded-lg rounded-tl-sm text-xs whitespace-pre-wrap leading-relaxed shadow-sm">
+                             <div className={`p-2.5 rounded-lg rounded-tl-sm text-xs whitespace-pre-wrap leading-relaxed shadow-sm ${
+                               isDarkMode 
+                                 ? 'bg-[#1e293b] text-slate-100 border border-slate-700' 
+                                 : 'bg-slate-200/70 text-slate-900'
+                             }`}>
                                {activeTicket.description}
                                <div className="mt-3 flex items-center justify-between">
-                                 <span className="bg-slate-300 text-slate-700 text-[10px] font-bold uppercase px-2 py-1 rounded-md">Original Report</span>
+                                 <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${
+                                   isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-300 text-slate-700'
+                                 }`}>Original Report</span>
                                </div>
 
                                {/* Initial Attachments */}
                                {activeTicket.attachments && activeTicket.attachments.length > 0 && (
-                                 <div className="mt-2.5 pt-2 border-t border-slate-300/70 space-y-1.5">
-                                   <p className="text-[10px] font-bold text-slate-600 uppercase">Attachments ({activeTicket.attachments.length})</p>
+                                 <div className={`mt-2.5 pt-2 border-t space-y-1.5 ${isDarkMode ? 'border-slate-700' : 'border-slate-300/70'}`}>
+                                   <p className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Attachments ({activeTicket.attachments.length})</p>
                                    {activeTicket.attachments.map(att => (
                                      <a 
                                        key={att.id || att.name} 
@@ -819,17 +884,21 @@ export const TechnicianWorkspace: React.FC = () => {
                                        download={att.name}
                                        target="_blank" 
                                        rel="noreferrer"
-                                       className="flex items-center gap-2 p-1.5 rounded-md bg-white border border-slate-300 hover:border-blue-400 transition-colors group"
+                                       className={`flex items-center gap-2 p-1.5 rounded-md border transition-colors group ${
+                                         isDarkMode 
+                                           ? 'bg-slate-900/80 border-slate-700 text-slate-200 hover:border-blue-500' 
+                                           : 'bg-white border-slate-300 hover:border-blue-400'
+                                       }`}
                                      >
-                                       <div className="size-6 rounded bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                       <div className={`size-6 rounded flex items-center justify-center shrink-0 overflow-hidden ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
                                          {att.type?.startsWith('image/') ? (
                                            <img src={att.url} alt={att.name} className="size-full object-cover" />
                                          ) : (
-                                           <FileIcon className="size-3 text-slate-500" />
+                                           <FileIcon className="size-3 text-slate-400" />
                                          )}
                                        </div>
-                                       <span className="text-[11px] font-medium text-slate-800 truncate flex-1">{att.name}</span>
-                                       <Download className="size-3 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                                       <span className={`text-[11px] font-medium truncate flex-1 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{att.name}</span>
+                                       <Download className="size-3 text-slate-400 group-hover:text-blue-400 transition-colors" />
                                      </a>
                                    ))}
                                  </div>
@@ -846,17 +915,21 @@ export const TechnicianWorkspace: React.FC = () => {
                            if (isNote) {
                              return (
                                <div key={msg.id} className="flex justify-center my-4">
-                                  <div className="flex items-start gap-2 max-w-lg bg-amber-50 border border-amber-200 p-2.5 rounded-lg text-sm text-amber-900 shadow-sm w-full">
+                                  <div className={`flex items-start gap-2 max-w-lg p-2.5 rounded-lg text-sm shadow-sm w-full border ${
+                                    isDarkMode 
+                                      ? 'bg-amber-950/40 border-amber-800/80 text-amber-200' 
+                                      : 'bg-amber-50 border-amber-200 text-amber-900'
+                                  }`}>
                                      <Lock className="size-3.5 shrink-0 text-amber-500 mt-0.5" />
                                      <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-2 mb-1">
-                                          <p className="font-bold text-xs text-amber-700">{msg.author_name} (Internal Note)</p>
-                                          <span className="text-[10px] text-amber-600/70">{new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                          <p className={`font-bold text-xs ${isDarkMode ? 'text-amber-300' : 'text-amber-700'}`}>{msg.author_name} (Internal Note)</p>
+                                          <span className={`text-[10px] ${isDarkMode ? 'text-amber-400/80' : 'text-amber-600/70'}`}>{new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                         </div>
                                         {msg.body && <p className="text-xs whitespace-pre-wrap">{msg.body}</p>}
 
                                         {msg.attachments && msg.attachments.length > 0 && (
-                                          <div className="mt-2 pt-2 border-t border-amber-200/60 space-y-1">
+                                          <div className={`mt-2 pt-2 border-t space-y-1 ${isDarkMode ? 'border-amber-800/60' : 'border-amber-200/60'}`}>
                                             {msg.attachments.map(att => (
                                               <a 
                                                 key={att.id || att.name} 
@@ -864,11 +937,15 @@ export const TechnicianWorkspace: React.FC = () => {
                                                 download={att.name}
                                                 target="_blank" 
                                                 rel="noreferrer"
-                                                className="flex items-center gap-2 p-1.5 rounded bg-white/70 border border-amber-200 hover:bg-white transition-colors group"
+                                                className={`flex items-center gap-2 p-1.5 rounded border transition-colors group ${
+                                                  isDarkMode 
+                                                    ? 'bg-slate-900/60 border-amber-800/60 hover:bg-slate-900 text-amber-200' 
+                                                    : 'bg-white/70 border-amber-200 hover:bg-white text-amber-900'
+                                                }`}
                                               >
-                                                <FileIcon className="size-3 text-amber-600 shrink-0" />
-                                                <span className="text-[11px] text-amber-900 font-medium truncate flex-1">{att.name}</span>
-                                                <Download className="size-3 text-amber-600 opacity-60 group-hover:opacity-100 shrink-0" />
+                                                <FileIcon className="size-3 text-amber-500 shrink-0" />
+                                                <span className="text-[11px] font-medium truncate flex-1">{att.name}</span>
+                                                <Download className="size-3 opacity-60 group-hover:opacity-100 shrink-0" />
                                               </a>
                                             ))}
                                           </div>
@@ -881,20 +958,28 @@ export const TechnicianWorkspace: React.FC = () => {
 
                            return (
                              <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
-                               <div className="size-6 rounded-full text-[10px] bg-slate-300 text-xs shrink-0 flex items-center justify-center font-bold text-slate-600">
+                               <div className={`size-6 rounded-full text-[10px] shrink-0 flex items-center justify-center font-bold ${
+                                 isDarkMode ? 'bg-slate-700 text-slate-200' : 'bg-slate-300 text-slate-600'
+                               }`}>
                                  {msg.author_name.charAt(0)}
                                </div>
                                <div className={`max-w-[75%] space-y-1 ${isMe ? 'text-right' : ''}`}>
                                  <div className={`flex items-center gap-2 ${isMe ? 'justify-end' : ''}`}>
-                                   <span className="font-bold text-xs text-slate-900">{msg.author_name}</span>
-                                   <span className="text-xs text-slate-400">· {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                   <span className={`font-bold text-xs ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>{msg.author_name}</span>
+                                   <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>· {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                  </div>
-                                 <div className={`p-2.5 rounded-lg text-xs whitespace-pre-wrap leading-relaxed shadow-sm text-left ${isMe ? 'bg-blue-100 text-blue-900 border border-blue-200 rounded-tr-sm' : 'bg-slate-200/70 text-slate-900 rounded-tl-sm'}`}>
+                                 <div className={`p-2.5 rounded-lg text-xs whitespace-pre-wrap leading-relaxed shadow-sm text-left ${
+                                   isMe 
+                                     ? 'bg-blue-600 text-white rounded-tr-sm' 
+                                     : isDarkMode 
+                                     ? 'bg-[#1e293b] text-slate-100 border border-slate-700 rounded-tl-sm' 
+                                     : 'bg-slate-200/70 text-slate-900 rounded-tl-sm'
+                                 }`}>
                                    {msg.body && <p>{msg.body}</p>}
 
                                    {/* Attachments rendering for both sides */}
                                    {msg.attachments && msg.attachments.length > 0 && (
-                                     <div className={`mt-2 pt-2 border-t space-y-1 ${isMe ? 'border-blue-200' : 'border-slate-300'}`}>
+                                     <div className={`mt-2 pt-2 border-t space-y-1 ${isMe ? 'border-blue-400/50' : isDarkMode ? 'border-slate-700' : 'border-slate-300'}`}>
                                        {msg.attachments.map(att => (
                                          <a 
                                            key={att.id || att.name} 
@@ -902,20 +987,26 @@ export const TechnicianWorkspace: React.FC = () => {
                                            download={att.name}
                                            target="_blank" 
                                            rel="noreferrer"
-                                           className="flex items-center gap-2 p-1.5 rounded-md bg-white border border-slate-200 hover:border-blue-400 transition-colors group"
+                                           className={`flex items-center gap-2 p-1.5 rounded-md border transition-colors group ${
+                                             isMe 
+                                               ? 'bg-blue-700/60 border-blue-500 text-white hover:bg-blue-700' 
+                                               : isDarkMode 
+                                               ? 'bg-slate-900/80 border-slate-700 text-slate-200 hover:border-blue-500' 
+                                               : 'bg-white border-slate-200 hover:border-blue-400'
+                                           }`}
                                          >
-                                           <div className="size-6 rounded bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                           <div className={`size-6 rounded flex items-center justify-center shrink-0 overflow-hidden ${isMe ? 'bg-blue-800' : isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
                                              {att.type?.startsWith('image/') ? (
                                                <img src={att.url} alt={att.name} className="size-full object-cover" />
                                              ) : (
-                                               <FileIcon className="size-3 text-slate-500" />
+                                               <FileIcon className={`size-3 ${isMe ? 'text-blue-200' : 'text-slate-400'}`} />
                                              )}
                                            </div>
                                            <div className="flex-1 min-w-0 text-left">
-                                             <p className="text-[11px] font-medium text-slate-800 truncate">{att.name}</p>
-                                             <p className="text-[9px] text-slate-400">{formatBytes(att.size)}</p>
+                                             <p className="text-[11px] font-medium truncate">{att.name}</p>
+                                             <p className={`text-[9px] ${isMe ? 'text-blue-200' : 'text-slate-400'}`}>{formatBytes(att.size)}</p>
                                            </div>
-                                           <Download className="size-3 text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
+                                           <Download className={`size-3 transition-colors shrink-0 ${isMe ? 'text-blue-200 group-hover:text-white' : 'text-slate-400 group-hover:text-blue-400'}`} />
                                          </a>
                                        ))}
                                      </div>
@@ -929,44 +1020,52 @@ export const TechnicianWorkspace: React.FC = () => {
                       </div>
 
                       {/* Right Action Column */}
-                      <div className="w-16 border-l border-slate-200 bg-white p-2 flex flex-col gap-2 shrink-0 items-center overflow-y-auto">
-                        <button onClick={() => setIsAssignModalOpen(true)} className="w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-700 hover:text-slate-900">
-                           <UserPlus className="size-3.5" />
+                      <div className={`w-16 border-l p-2 flex flex-col gap-2 shrink-0 items-center overflow-y-auto ${isDarkMode ? 'bg-[#0f172a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                        <button onClick={() => setIsAssignModalOpen(true)} className={`w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border transition-colors cursor-pointer ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                           <UserPlus className="size-3.5 text-blue-400" />
                            <span className="text-[9px] font-bold text-center leading-tight">Assign<br/>Agent</span>
                         </button>
-                        <button onClick={handleAssignToMe} className="w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-700 hover:text-slate-900">
-                           <UserCheck className="size-3.5" />
+                        <button onClick={handleAssignToMe} className={`w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border transition-colors cursor-pointer ${isDarkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                           <UserCheck className="size-3.5 text-indigo-400" />
                            <span className="text-[9px] font-bold text-center leading-tight">Take<br/>Ticket</span>
                         </button>
-                        <button onClick={handleEscalate} className="w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-700 hover:text-slate-900">
-                           <ArrowUpRight className="size-3.5" />
+                        <button onClick={handleEscalate} className={`w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border transition-colors cursor-pointer ${isDarkMode ? 'border-slate-700 text-rose-300 hover:bg-rose-950/40 hover:border-rose-700' : 'border-slate-200 text-rose-600 hover:bg-rose-50'}`}>
+                           <ArrowUpRight className="size-3.5 text-rose-500" />
                            <span className="text-[9px] font-bold text-center leading-tight">Escalate</span>
                         </button>
-                        <button onClick={handleResolve} className="w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors text-slate-700 hover:text-slate-900">
-                           <CheckCircle className="size-3.5" />
+                        <button onClick={handleResolve} className={`w-full flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border transition-colors cursor-pointer ${isDarkMode ? 'border-slate-700 text-emerald-300 hover:bg-emerald-950/40 hover:border-emerald-700' : 'border-slate-200 text-emerald-600 hover:bg-emerald-50'}`}>
+                           <CheckCircle className="size-3.5 text-emerald-500" />
                            <span className="text-[9px] font-bold text-center leading-tight">Resolve</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Bottom Composer */}
-                    <div className="bg-white border-t border-slate-200 p-4 shrink-0 space-y-3">
-                       <div className="flex items-center gap-3 border-b border-slate-200 pb-2">
-                         <button onClick={() => setIsInternal(false)} className={`text-sm font-bold pb-2 -mb-[9px] border-b-2 transition-colors ${!isInternal ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500'}`}>
+                    <div className={`border-t p-4 shrink-0 space-y-3 ${isDarkMode ? 'bg-[#0f172a] border-slate-800' : 'bg-white border-slate-200'}`}>
+                       <div className={`flex items-center gap-3 border-b pb-2 ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                         <button onClick={() => setIsInternal(false)} className={`text-sm font-bold pb-2 -mb-[9px] border-b-2 transition-colors cursor-pointer ${!isInternal ? 'border-blue-500 text-blue-400' : isDarkMode ? 'border-transparent text-slate-400 hover:text-slate-200' : 'border-transparent text-slate-500'}`}>
                            Customer Reply
                          </button>
-                         <button onClick={() => setIsInternal(true)} className={`flex items-center gap-1 text-sm font-bold pb-2 -mb-[9px] border-b-2 transition-colors ${isInternal ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500'}`}>
+                         <button onClick={() => setIsInternal(true)} className={`flex items-center gap-1 text-sm font-bold pb-2 -mb-[9px] border-b-2 transition-colors cursor-pointer ${isInternal ? 'border-amber-500 text-amber-400' : isDarkMode ? 'border-transparent text-slate-400 hover:text-slate-200' : 'border-transparent text-slate-500'}`}>
                            Internal Note <Lock className="size-3.5" />
                          </button>
                          
                          {/* Quick Pills */}
                          <div className="flex-1 flex justify-end gap-2 overflow-x-auto">
-                            <button onClick={handleAIDraft} disabled={isDrafting} className="shrink-0 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-full transition-colors flex items-center gap-1 disabled:opacity-50">
+                            <button onClick={handleAIDraft} disabled={isDrafting} className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full transition-colors flex items-center gap-1 disabled:opacity-50 cursor-pointer ${
+                              isDarkMode 
+                                ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700' 
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                            }`}>
                                {isDrafting ? <Loader2 className="size-3 animate-spin" /> : null}
                                AI Suggested
                             </button>
                             {MACROS.map(m => (
-                              <button key={m.label} onClick={() => setReplyText(m.body)} className="shrink-0 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-full transition-colors">
+                              <button key={m.label} onClick={() => setReplyText(m.body)} className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full transition-colors cursor-pointer ${
+                                isDarkMode 
+                                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700' 
+                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                              }`}>
                                 {m.label}
                               </button>
                             ))}
@@ -977,10 +1076,14 @@ export const TechnicianWorkspace: React.FC = () => {
                        {composerAttachments.length > 0 && (
                          <div className="flex flex-wrap gap-2 pt-1">
                            {composerAttachments.map(att => (
-                             <div key={att.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs">
-                               <FileIcon className="size-3 text-slate-500" />
-                               <span className="truncate max-w-[120px] font-medium text-slate-700">{att.file.name}</span>
-                               <button type="button" onClick={() => removeTechAttachment(att.id)} className="text-slate-400 hover:text-red-500 p-0.5">
+                             <div key={att.id} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border ${
+                               isDarkMode 
+                                 ? 'bg-slate-800 border-slate-700 text-slate-200' 
+                                 : 'bg-slate-100 border-slate-200 text-slate-700'
+                             }`}>
+                               <FileIcon className="size-3 text-slate-400" />
+                               <span className="truncate max-w-[120px] font-medium">{att.file.name}</span>
+                               <button type="button" onClick={() => removeTechAttachment(att.id)} className="text-slate-400 hover:text-red-400 p-0.5 cursor-pointer">
                                  <Trash2 className="size-3" />
                                </button>
                              </div>
@@ -990,12 +1093,16 @@ export const TechnicianWorkspace: React.FC = () => {
 
                        {/* Voice Error Notice */}
                        {speechError && (
-                         <div className="flex items-center justify-between px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                         <div className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-xs border ${
+                           isDarkMode 
+                             ? 'bg-amber-950/40 border-amber-800/80 text-amber-200' 
+                             : 'bg-amber-50 border-amber-200 text-amber-800'
+                         }`}>
                            <div className="flex items-center gap-1.5">
-                             <AlertCircle className="size-3.5 text-amber-600 shrink-0" />
+                             <AlertCircle className="size-3.5 text-amber-500 shrink-0" />
                              <span>{speechError}</span>
                            </div>
-                           <button onClick={clearSpeechError} className="text-amber-600 hover:text-amber-800 font-bold ml-2">Dismiss</button>
+                           <button onClick={clearSpeechError} className="text-amber-400 hover:text-amber-300 font-bold ml-2 cursor-pointer">Dismiss</button>
                          </div>
                        )}
                        
@@ -1005,7 +1112,11 @@ export const TechnicianWorkspace: React.FC = () => {
                            onChange={e => setReplyText(e.target.value)}
                            placeholder={isInternal ? "Write internal note (only visible to support agents)..." : "Type your reply to customer..."}
                            rows={3}
-                           className="w-full resize-none p-2 pb-11 pr-24 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs outline-none focus:border-blue-500 transition-colors"
+                           className={`w-full resize-none p-2 pb-11 pr-24 rounded-xl border text-xs outline-none transition-colors ${
+                             isDarkMode 
+                               ? 'bg-[#1e293b] border-slate-700 text-slate-100 placeholder-slate-500 focus:border-blue-500' 
+                               : 'bg-slate-50 border-slate-200 focus:bg-white text-slate-900 focus:border-blue-500'
+                           }`}
                            onKeyDown={e => {
                              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                                handleSendReply(e);
@@ -1014,7 +1125,9 @@ export const TechnicianWorkspace: React.FC = () => {
                          />
 
                          <div className="absolute bottom-2.5 left-2 flex items-center gap-1.5">
-                           <label className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-200 cursor-pointer transition-colors" title="Attach file">
+                           <label className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
+                             isDarkMode ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'
+                           }`} title="Attach file">
                              <Paperclip className="size-4" />
                              <input type="file" multiple onChange={handleTechFileSelect} className="hidden" />
                            </label>
@@ -1022,12 +1135,12 @@ export const TechnicianWorkspace: React.FC = () => {
                            <button
                              type="button"
                              onClick={toggleVoiceInput}
-                             className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs ${
+                             className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs cursor-pointer ${
                                isListening
                                  ? 'bg-red-500 text-white animate-pulse'
                                  : isTranscribing
-                                 ? 'bg-blue-100 text-blue-700'
-                                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'
+                                 ? 'bg-blue-600 text-white'
+                                 : isDarkMode ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'
                              }`}
                              title={isListening ? 'Stop recording' : 'Voice dictation'}
                            >
@@ -1043,7 +1156,7 @@ export const TechnicianWorkspace: React.FC = () => {
                          <button
                            type="submit"
                            disabled={!replyText.trim() && composerAttachments.length === 0}
-                           className="absolute bottom-2.5 right-2 bg-[#4c7db7] hover:bg-[#3b608f] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                           className="absolute bottom-2.5 right-2 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 shadow-xs"
                          >
                            <Send className="size-3.5" />
                            Send
@@ -1055,24 +1168,48 @@ export const TechnicianWorkspace: React.FC = () => {
                 )}
                 
                 {inspectorTab === 'ai_intel' && (
-                  <div className="flex-1 p-6 text-slate-500 flex flex-col items-center justify-center">
+                  <div className={`flex-1 p-6 flex flex-col items-center justify-center ${isDarkMode ? 'text-slate-400 bg-[#070b14]' : 'text-slate-500 bg-[#f8fafc]'}`}>
                     <Cpu className="size-12 mb-4 text-blue-500" />
-                    <p className="font-bold">AI Triage Data</p>
-                    <p className="text-sm">Confidence: {activeTicket.ai_confidence ? Math.round(activeTicket.ai_confidence * 100) : 91}%</p>
+                    <p className={`font-bold text-base ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>AI Triage Data</p>
+                    <p className="text-sm mt-1">Confidence Score: {activeTicket.ai_confidence ? Math.round(activeTicket.ai_confidence * 100) : 91}%</p>
+                    <div className={`mt-4 p-4 rounded-xl border max-w-md w-full text-xs space-y-2 ${isDarkMode ? 'bg-[#1e293b] border-slate-700 text-slate-300' : 'bg-white border-slate-200 text-slate-700'}`}>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-slate-400">Assigned Category:</span>
+                        <span className="font-bold capitalize">{activeTicket.category}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-slate-400">Assessed Priority:</span>
+                        <span className="font-bold capitalize">{activeTicket.priority}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-slate-400">Model Model:</span>
+                        <span className="font-bold">Gemini 2.5 Flash</span>
+                      </div>
+                    </div>
                   </div>
                 )}
                 {inspectorTab === 'requester' && (
-                  <div className="flex-1 p-6 text-slate-500 flex flex-col items-center justify-center">
+                  <div className={`flex-1 p-6 flex flex-col items-center justify-center ${isDarkMode ? 'text-slate-400 bg-[#070b14]' : 'text-slate-500 bg-[#f8fafc]'}`}>
                     <User className="size-12 mb-4 text-blue-500" />
-                    <p className="font-bold">{activeTicket.requester_name}</p>
-                    <p className="text-sm">{activeTicket.requester_email}</p>
+                    <p className={`font-bold text-base ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{activeTicket.requester_name}</p>
+                    <p className="text-sm mt-1">{activeTicket.requester_email}</p>
+                    <div className={`mt-4 p-4 rounded-xl border max-w-md w-full text-xs space-y-2 ${isDarkMode ? 'bg-[#1e293b] border-slate-700 text-slate-300' : 'bg-white border-slate-200 text-slate-700'}`}>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-slate-400">User Role:</span>
+                        <span className="font-bold uppercase text-blue-400">Customer</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-slate-400">Ticket Origin:</span>
+                        <span className="font-bold">Web Portal</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-slate-400">
-                 <TicketIcon className="size-16 mb-4 opacity-50" />
-                 <p className="font-bold text-lg">No Ticket Selected</p>
+              <div className={`flex-1 flex flex-col items-center justify-center p-6 ${isDarkMode ? 'text-slate-500 bg-[#070b14]' : 'text-slate-400 bg-[#f8fafc]'}`}>
+                 <TicketIcon className="size-16 mb-4 opacity-40" />
+                 <p className={`font-bold text-lg ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>No Ticket Selected</p>
                  <p className="text-sm">Select a ticket from the queue to view details.</p>
               </div>
             )}
