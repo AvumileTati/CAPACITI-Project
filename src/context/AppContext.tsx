@@ -298,22 +298,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     playChimeSound();
   }, []);
 
-  // Allow all users to switch roles on the dashboard seamlessly
-  const setViewRole = async (role: UserRole) => {
-    setViewRoleState(role);
-    localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
-
-    if (currentUser) {
-      setCurrentUser((prev) => (prev ? { ...prev, role } : null));
-      try {
-        await updateUserInFirestore(currentUser.id, { role });
-      } catch (err) {
-        console.warn('Could not sync role change to Firestore:', err);
-      }
+  // Role-based access control: Only Admin can switch to any workspace; Technicians can access Tech + Customer; Users can only access Customer.
+  const setViewRole = (role: UserRole) => {
+    if (!currentUser) {
+      setViewRoleState(role);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
+      return;
     }
 
-    const roleName = role === 'admin' ? 'Administrator' : role === 'technician' ? 'Technician' : 'Customer';
-    showToast(`Switched to ${roleName} Dashboard`, 'success');
+    if (currentUser.role === 'admin') {
+      // Admin has full cross-workspace access
+      setViewRoleState(role);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
+      const roleName = role === 'admin' ? 'Administrator' : role === 'technician' ? 'Technician' : 'Customer';
+      showToast(`Admin view context switched to ${roleName}`, 'info');
+      return;
+    }
+
+    if (currentUser.role === 'technician') {
+      if (role === 'admin') {
+        showToast('🔒 Access Denied: Administrator privileges required to access the Admin Control Center.', 'error');
+        return;
+      }
+      setViewRoleState(role);
+      localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, role);
+      showToast(`Switched to ${role === 'technician' ? 'Technician Workspace' : 'Customer Portal'}`, 'info');
+      return;
+    }
+
+    // Standard User / Customer
+    if (role !== 'user') {
+      showToast(`🔒 Access Denied: ${role === 'admin' ? 'Administrator' : 'Technician'} role required to access this workspace.`, 'error');
+      return;
+    }
+
+    setViewRoleState('user');
+    localStorage.setItem(STORAGE_KEYS.VIEW_ROLE, 'user');
   };
 
   const switchDemoUser = (role: UserRole) => {

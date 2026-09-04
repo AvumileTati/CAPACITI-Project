@@ -7,7 +7,7 @@ import {
   Bell, LogOut, Search, SlidersHorizontal, Copy, UserPlus,
   UserCheck, ArrowUpRight, CheckCircle, Lock, Send, Cpu, User,
   RefreshCw, CheckCircle2, Paperclip, Trash2, Download, FileText as FileIcon,
-  Mic, Loader2, AlertCircle
+  Mic, Loader2, AlertCircle, Flame, AlertTriangle, Zap
 } from 'lucide-react';
 import { RoleSwitcher } from './RoleSwitcher';
 import { AssignAgentModal } from './AssignAgentModal';
@@ -27,6 +27,7 @@ export const TechnicianWorkspace: React.FC = () => {
     signOut,
     unreadNotificationsCount,
     setIsNotificationCenterOpen,
+    showToast,
   } = useApp();
 
   const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'new' | 'in_progress' | 'escalated' | 'resolved' | 'dashboard' | 'reports'>('all');
@@ -108,17 +109,23 @@ export const TechnicianWorkspace: React.FC = () => {
 
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
+      const isResolved = t.status === 'resolved' || t.status === 'closed';
+
       if (filterMode === 'mine') {
+        if (isResolved) return false;
         const isMine = t.assigned_to === currentUser?.id || t.assigned_name?.toLowerCase().includes('marcus') || (currentUser?.full_name && t.assigned_name === currentUser.full_name);
         if (!isMine) return false;
+      } else if (filterMode === 'all') {
+        if (isResolved) return false;
       } else if (filterMode === 'new') {
         if (t.status !== 'new') return false;
       } else if (filterMode === 'in_progress') {
         if (t.status !== 'in_progress' && t.status !== 'pending_user') return false;
       } else if (filterMode === 'escalated') {
+        if (isResolved) return false;
         if (t.status !== 'escalated' && t.priority !== 'urgent') return false;
       } else if (filterMode === 'resolved') {
-        if (t.status !== 'resolved' && t.status !== 'closed') return false;
+        if (!isResolved) return false;
       }
 
       if (categoryFilter !== 'all' && t.category !== categoryFilter) return false;
@@ -208,7 +215,16 @@ export const TechnicianWorkspace: React.FC = () => {
     if (!activeTicket) return;
     setIsUpdatingStatus(true);
     try {
-      await updateTicket(activeTicket.id, { status: newStatus });
+      const isMarkingResolved = newStatus === 'resolved' || newStatus === 'closed';
+      await updateTicket(activeTicket.id, { 
+        status: newStatus,
+        ...(isMarkingResolved ? { resolved_at: new Date().toISOString() } : {})
+      });
+      if (isMarkingResolved) {
+        showToast(`Ticket ${activeTicket.id} marked as resolved and moved to Resolved section.`, 'success');
+      } else {
+        showToast(`Status updated to ${newStatus.replace('_', ' ')}`, 'info');
+      }
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -221,40 +237,145 @@ export const TechnicianWorkspace: React.FC = () => {
       assigned_to: currentUser?.id,
       assigned_name: currentUser?.full_name || 'Support Technician',
     });
+    showToast(`Ticket ${activeTicket.id} assigned to you`, 'success');
   };
 
   const handleEscalate = async () => {
     if (!activeTicket) return;
     await updateTicket(activeTicket.id, { status: 'escalated', priority: 'urgent' });
+    showToast(`Ticket ${activeTicket.id} escalated with Urgent priority`, 'warning');
   };
 
   const handleResolve = async () => {
     if (!activeTicket) return;
-    await updateTicket(activeTicket.id, { status: 'resolved', resolved_at: new Date().toISOString() });
+    const ticketId = activeTicket.id;
+    await updateTicket(ticketId, { 
+      status: 'resolved', 
+      resolved_at: new Date().toISOString() 
+    });
+    showToast(`Ticket ${ticketId} resolved and moved to Resolved section`, 'success');
   };
 
   const getPriorityBadge = (priority: TicketPriority) => {
     switch (priority) {
-      case 'urgent': return <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-[10px] font-bold">Urgent</span>;
-      case 'high': return <span className="bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full text-[10px] font-bold">High</span>;
-      case 'medium': return <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Medium</span>;
-      default: return <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">Low</span>;
+      case 'urgent':
+        return (
+          <motion.span
+            animate={{
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: 1.6,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="inline-flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-300 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold shadow-xs relative overflow-hidden"
+          >
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+            </span>
+            <Flame className="size-3 text-red-600 shrink-0 animate-pulse" />
+            <span className="tracking-wide uppercase text-[9px] font-black">Urgent</span>
+          </motion.span>
+        );
+      case 'high':
+        return (
+          <motion.span
+            animate={{
+              scale: [1, 1.03, 1],
+            }}
+            transition={{
+              duration: 2.2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-2xs"
+          >
+            <span className="size-1.5 rounded-full bg-amber-500 shrink-0 animate-pulse" />
+            <AlertTriangle className="size-3 text-amber-600 shrink-0" />
+            <span className="capitalize font-bold">High</span>
+          </motion.span>
+        );
+      case 'medium':
+        return (
+          <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-800 border border-yellow-200 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+            <span className="size-1.5 rounded-full bg-yellow-400 shrink-0" />
+            <span className="capitalize">Medium</span>
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full text-[10px] font-medium">
+            <span className="size-1.5 rounded-full bg-slate-400 shrink-0" />
+            <span className="capitalize">Low</span>
+          </span>
+        );
     }
   };
 
   const getStatusBadge = (status: TicketStatus) => {
     if (status === 'resolved' || status === 'closed') {
-      return <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Resolved</span>;
+      return (
+        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+          <CheckCircle2 className="size-3 text-emerald-600 shrink-0" />
+          <span>Resolved</span>
+        </span>
+      );
     } else if (status === 'escalated') {
-      return <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Escalated</span>;
+      return (
+        <motion.span
+          animate={{
+            scale: [1, 1.05, 1],
+            boxShadow: [
+              '0 0 0 0 rgba(225, 29, 72, 0)',
+              '0 0 0 4px rgba(225, 29, 72, 0.25)',
+              '0 0 0 0 rgba(225, 29, 72, 0)',
+            ],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-300 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider relative"
+        >
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
+          </span>
+          <ArrowUpRight className="size-3 text-rose-600 stroke-[2.5] shrink-0" />
+          <span>Escalated</span>
+        </motion.span>
+      );
     } else if (status === 'in_progress') {
-      return <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-bold">In Progress</span>;
+      return (
+        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+          <span className="size-1.5 rounded-full bg-blue-500 animate-pulse shrink-0" />
+          <span>In Progress</span>
+        </span>
+      );
+    } else if (status === 'pending_user') {
+      return (
+        <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+          <span className="size-1.5 rounded-full bg-purple-400 shrink-0" />
+          <span>Pending</span>
+        </span>
+      );
     }
-    return <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-bold">New</span>;
+    return (
+      <span className="inline-flex items-center gap-1 bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+        <span className="size-1.5 rounded-full bg-sky-500 shrink-0" />
+        <span>New</span>
+      </span>
+    );
   };
 
-  const myTicketsCount = tickets.filter(t => t.assigned_to === currentUser?.id || t.assigned_name?.toLowerCase().includes('marcus') || (currentUser?.full_name && t.assigned_name === currentUser.full_name)).length;
-  const teamQueueCount = tickets.length;
+  const openTickets = tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed');
+  const myTicketsCount = openTickets.filter(t => t.assigned_to === currentUser?.id || t.assigned_name?.toLowerCase().includes('marcus') || (currentUser?.full_name && t.assigned_name === currentUser.full_name)).length;
+  const teamQueueCount = openTickets.length;
+  const escalatedCount = openTickets.filter(t => t.status === 'escalated' || t.priority === 'urgent').length;
+  const resolvedCount = tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
 
   return (
     <div className="flex h-screen w-full bg-white text-slate-900 overflow-hidden font-sans">
@@ -285,6 +406,28 @@ export const TechnicianWorkspace: React.FC = () => {
             {teamQueueCount > 0 && <span className="bg-blue-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{teamQueueCount}</span>}
           </button>
 
+          <button onClick={() => setFilterMode('escalated')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'escalated' ? 'bg-rose-100 text-rose-800 font-bold' : 'text-slate-600 hover:bg-slate-100'}`}>
+            <div className="flex items-center gap-3"><ArrowUpRight className="size-3.5 text-rose-600" /> Escalated</div>
+            {escalatedCount > 0 && (
+              <motion.span
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="bg-rose-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-1"
+              >
+                <Flame className="size-2.5" />
+                {escalatedCount}
+              </motion.span>
+            )}
+          </button>
+
+          <button onClick={() => setFilterMode('resolved')} className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterMode === 'resolved' ? 'bg-emerald-100 text-emerald-800 font-bold' : 'text-slate-600 hover:bg-slate-100'}`}>
+            <div className="flex items-center gap-3"><CheckCircle2 className="size-3.5 text-emerald-600" /> Resolved</div>
+            {resolvedCount > 0 && (
+              <span className="bg-emerald-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-2xs">
+                {resolvedCount}
+              </span>
+            )}
+          </button>
 
         </nav>
       </aside>
@@ -326,8 +469,14 @@ export const TechnicianWorkspace: React.FC = () => {
           {/* Middle Column: Ticket List */}
           <div className="w-[280px] border-r border-slate-200 flex flex-col bg-white shrink-0">
             {/* Search/Filter Header */}
-            <div className="p-3 border-b border-slate-200 space-y-3 shrink-0">
-              <h2 className="font-bold text-sm text-slate-800">Search / Filter</h2>
+            <div className="p-3 border-b border-slate-200 space-y-2.5 shrink-0">
+              <div className="flex items-center justify-between">
+                <h2 className="font-bold text-sm text-slate-800">Tickets Queue</h2>
+                <span className="text-[11px] font-semibold text-slate-500">
+                  {filteredTickets.length} of {tickets.length}
+                </span>
+              </div>
+              
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -335,14 +484,61 @@ export const TechnicianWorkspace: React.FC = () => {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search Tickets"
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                    placeholder="Search ID, title, user..."
+                    className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
                   />
                 </div>
                 <button 
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`p-2 border rounded-lg transition-colors ${showFilters ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                  title="Advanced Filters"
+                  className={`p-1.5 border rounded-lg transition-colors ${showFilters ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
                    <SlidersHorizontal className="size-3.5" />
+                </button>
+              </div>
+
+              {/* Quick Status Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none text-[11px]">
+                <button
+                  onClick={() => setFilterMode('all')}
+                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 transition-colors ${
+                    filterMode === 'all'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  All ({teamQueueCount})
+                </button>
+                <button
+                  onClick={() => setFilterMode('mine')}
+                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 transition-colors ${
+                    filterMode === 'mine'
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Mine ({myTicketsCount})
+                </button>
+                <button
+                  onClick={() => setFilterMode('escalated')}
+                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 flex items-center gap-1 transition-colors ${
+                    filterMode === 'escalated'
+                      ? 'bg-rose-600 text-white shadow-2xs'
+                      : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200/60'
+                  }`}
+                >
+                  <Flame className="size-2.5" />
+                  Escalated ({escalatedCount})
+                </button>
+                <button
+                  onClick={() => setFilterMode('resolved')}
+                  className={`px-2 py-0.5 rounded-md font-semibold shrink-0 flex items-center gap-1 transition-colors ${
+                    filterMode === 'resolved'
+                      ? 'bg-emerald-600 text-white shadow-2xs'
+                      : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60'
+                  }`}
+                >
+                  <CheckCircle2 className="size-2.5" />
+                  Resolved ({resolvedCount})
                 </button>
               </div>
               
@@ -413,6 +609,10 @@ export const TechnicianWorkspace: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50/50">
               {filteredTickets.map(ticket => {
                 const isSelected = ticket.id === selectedTicketId;
+                const isUrgent = ticket.priority === 'urgent';
+                const isEscalated = ticket.status === 'escalated';
+                const isResolved = ticket.status === 'resolved' || ticket.status === 'closed';
+
                 return (
                   <motion.div
                     key={ticket.id}
@@ -421,17 +621,36 @@ export const TechnicianWorkspace: React.FC = () => {
                     onClick={() => setSelectedTicketId(ticket.id)}
                     className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
                       isSelected 
-                        ? 'border-blue-300 bg-blue-50 shadow-sm' 
+                        ? isUrgent || isEscalated
+                          ? 'border-red-400 bg-red-50/40 shadow-sm border-l-4 border-l-red-500'
+                          : isResolved
+                          ? 'border-emerald-400 bg-emerald-50/40 shadow-sm border-l-4 border-l-emerald-500'
+                          : 'border-blue-300 bg-blue-50 shadow-sm'
+                        : isUrgent || isEscalated
+                        ? 'border-red-200/90 bg-red-50/20 border-l-4 border-l-red-500 hover:border-red-300'
+                        : isResolved
+                        ? 'border-emerald-200/80 bg-emerald-50/15 border-l-4 border-l-emerald-500 hover:border-emerald-300'
                         : 'border-slate-200 bg-white hover:border-blue-200'
                     }`}
                   >
                     <div className="flex gap-3">
-                      <div className="size-6 rounded-full text-[10px] bg-slate-200 shrink-0 overflow-hidden flex items-center justify-center font-bold text-slate-500 text-xs">
-                         {ticket.requester_name.charAt(0)}
+                      <div className={`size-6 rounded-full text-[10px] shrink-0 overflow-hidden flex items-center justify-center font-bold text-xs ${
+                        isUrgent || isEscalated 
+                          ? 'bg-red-100 text-red-700' 
+                          : isResolved
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-slate-200 text-slate-500'
+                      }`}>
+                         {isResolved ? <CheckCircle2 className="size-3.5 text-emerald-600" /> : ticket.requester_name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center justify-between">
                            <span className="font-bold text-sm text-slate-800 line-clamp-1">{ticket.id}</span>
+                           {isResolved && (
+                             <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
+                               Resolved
+                             </span>
+                           )}
                         </div>
                         <p className="text-sm text-slate-900 font-semibold line-clamp-1">{ticket.title}</p>
                         <p className="text-xs text-slate-500">{getCategoryLabel(ticket.category)}</p>
@@ -445,7 +664,15 @@ export const TechnicianWorkspace: React.FC = () => {
                 );
               })}
               {filteredTickets.length === 0 && (
-                <div className="text-center p-4 text-sm text-slate-500">No tickets found</div>
+                <div className="text-center p-8 text-sm text-slate-500 space-y-2">
+                  <CheckCircle2 className="size-8 text-slate-300 mx-auto" />
+                  <p className="font-semibold text-slate-700">No tickets found</p>
+                  <p className="text-xs text-slate-400">
+                    {filterMode === 'resolved'
+                      ? 'No tickets currently marked as resolved.'
+                      : 'Try adjusting your filters or search query.'}
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -457,11 +684,10 @@ export const TechnicianWorkspace: React.FC = () => {
                 {/* Details Header */}
                 <div className="p-3 border-b border-slate-200 shrink-0 space-y-4">
                   {/* Title */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center flex-wrap gap-3">
                     <h2 className="text-lg font-bold text-slate-900 tracking-tight">{activeTicket.title}</h2>
-                    <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-bold border border-emerald-200">
-                      {formatStatus(activeTicket.status)}
-                    </span>
+                    {getPriorityBadge(activeTicket.priority)}
+                    {getStatusBadge(activeTicket.status)}
                   </div>
 
                   {/* 3 Data Columns */}
@@ -539,6 +765,29 @@ export const TechnicianWorkspace: React.FC = () => {
                 {inspectorTab === 'discussion' && (
                   <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc]">
                     
+                    {/* Resolution Banner */}
+                    {(activeTicket.status === 'resolved' || activeTicket.status === 'closed') && (
+                      <div className="mx-4 mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-3 text-xs shadow-2xs">
+                        <div className="flex items-center gap-2.5">
+                          <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                          <div>
+                            <p className="font-bold text-emerald-950">Ticket Marked as Resolved</p>
+                            <p className="text-[11px] text-emerald-700">
+                              {activeTicket.resolved_at 
+                                ? `Resolved on ${new Date(activeTicket.resolved_at).toLocaleString()}` 
+                                : 'This request is successfully resolved.'}
+                            </p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleStatusChange('in_progress')}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors shrink-0 cursor-pointer"
+                        >
+                          Reopen Ticket
+                        </button>
+                      </div>
+                    )}
+
                     {/* Chat Area & Floating Actions */}
                     <div className="flex-1 flex overflow-hidden">
                       <div className="flex-1 overflow-y-auto p-4 space-y-4">
