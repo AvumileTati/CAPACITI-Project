@@ -141,12 +141,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBackToLanding }) => {
       {/* LEFT PANEL - Branding (Hidden on small mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#123333] flex-col justify-between p-12 relative overflow-hidden">
         {/* Ambient background blur */}
-        <div className="absolute -top-[10%] -left-[10%] w-[55%] h-[55%] rounded-full bg-[#00d492]/10 blur-[130px]" />
+        <div
+          style={{ width: '30px' }}
+          className="absolute -top-[10%] -left-[10%] w-[55%] h-[55%] rounded-full bg-[#00d492]/10 blur-[130px]"
+        />
         <div className="absolute top-[35%] -right-[10%] w-[45%] h-[45%] rounded-full bg-[#0f3b6c]/30 blur-[140px]" />
         
         <div className="relative z-10 flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-[#00d492] text-[#123333] shadow-md grid place-items-center font-bold">
-            <Bot className="size-5" />
+          <div
+            style={{ color: '#000000', borderColor: '#000000', backgroundColor: '#ffffff' }}
+            className="size-10 rounded-xl bg-white border border-black text-black shadow-md grid place-items-center font-bold"
+          >
+            <Bot style={{ width: '40px', height: '40px' }} className="size-10 text-black p-1" />
           </div>
           <span className="font-display text-xl font-bold tracking-tight text-white">TechnoResolve Desk</span>
         </div>

@@ -82,10 +82,10 @@ export const LandingPage: React.FC<{
           >
             {/* Pill style badge */}
             <span
-              style={{ backgroundColor: '#ffffff', color: '#000000' }}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-bold text-black border border-white/20 shadow-sm mb-6"
+              style={{ backgroundColor: '#ffffff', color: '#ffffff' }}
+              className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-bold text-white border border-white/20 shadow-sm mb-6"
             >
-              <Sparkles className="size-4 text-black" />
+              <Sparkles style={{ color: '#ffffff' }} className="size-4 text-white" />
               ✦ AI ticket classification built in
             </span>
 
