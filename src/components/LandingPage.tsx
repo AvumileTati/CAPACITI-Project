@@ -74,8 +74,11 @@ export const LandingPage: React.FC<{
             transition={{ duration: 0.5 }}
           >
             {/* Pill style badge */}
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#123333] px-4 py-1.5 text-sm font-bold text-white border border-[#00d492]/40 shadow-sm mb-6">
-              <Sparkles className="size-4 text-white" />
+            <span
+              style={{ backgroundColor: '#ffffff', color: '#000000' }}
+              className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-bold text-black border border-white/20 shadow-sm mb-6"
+            >
+              <Sparkles className="size-4 text-black" />
               ✦ AI ticket classification built in
             </span>
 
@@ -141,7 +144,10 @@ export const LandingPage: React.FC<{
         {/* ================= 2. "HOW IT WORKS" PIPELINE (3-Step Pipeline) ================= */}
         <div className="mb-24">
           <div className="text-center mb-12">
-            <span className="text-xs font-bold font-mono tracking-widest text-white uppercase bg-[#00d492]/10 border border-[#00d492]/20 px-3 py-1 rounded-full">
+            <span
+              style={{ backgroundColor: '#ffffff', color: '#000000' }}
+              className="text-xs font-bold font-mono tracking-widest uppercase bg-white text-black border border-white/20 px-3 py-1 rounded-full shadow-sm"
+            >
               Automated Lifecycle
             </span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white font-display mt-3">
@@ -186,7 +192,10 @@ export const LandingPage: React.FC<{
               transition={{ duration: 0.4, delay: 0.2 }}
               className="rounded-3xl bg-[#ffffff] text-[#123333] border border-slate-200 p-7 shadow-xl relative overflow-hidden flex flex-col justify-between ring-1 ring-[#123333]/10"
             >
-              <div className="size-12 rounded-2xl bg-[#ffffff] border border-[#123333] text-[#123333] flex items-center justify-center font-display text-xl font-extrabold mb-5 shadow-sm">
+              <div
+                style={{ borderColor: '#ffffff' }}
+                className="size-12 rounded-2xl bg-[#ffffff] border border-white text-[#123333] flex items-center justify-center font-display text-xl font-extrabold mb-5 shadow-sm"
+              >
                 2
               </div>
               <div>
@@ -236,7 +245,10 @@ export const LandingPage: React.FC<{
         {/* ================= 3. CORE ROLE FEATURE BREAKDOWN (3-Card Grid) ================= */}
         <div className="mb-24">
           <div className="text-center mb-12">
-            <span className="text-xs font-bold font-mono tracking-widest text-[#00d492] uppercase bg-[#00d492]/10 border border-[#00d492]/20 px-3 py-1 rounded-full">
+            <span
+              style={{ backgroundColor: '#ffffff', color: '#000000' }}
+              className="text-xs font-bold font-mono tracking-widest uppercase bg-white text-black border border-white/20 px-3 py-1 rounded-full shadow-sm"
+            >
               Unified Ecosystem
             </span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white font-display mt-3">
@@ -314,7 +326,7 @@ export const LandingPage: React.FC<{
               transition={{ delay: 0.1 }}
               className="rounded-3xl bg-[#0c2424] border border-white/10 p-8 shadow-xl flex flex-col justify-between group hover:border-[#00d492]/40 transition-all"
             >
-              <div>
+              <div style={{ color: '#000000' }}>
                 <div className="size-14 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center mb-6">
                   <Zap className="size-7" />
                 </div>
