@@ -27,6 +27,50 @@ function getAI(): GoogleGenAI | null {
   return aiClient;
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Fast, stable model cascade prioritizing high-availability models to eliminate 503 high demand errors
+const TEXT_MODELS = ['gemini-2.5-flash', 'gemini-3.7-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
+const AUDIO_MODELS = ['gemini-2.5-flash', 'gemini-3.7-flash'];
+
+async function executeGeminiWithFallback(
+  ai: GoogleGenAI,
+  models: string[],
+  requestFn: (model: string) => any
+) {
+  let lastError: any = null;
+  for (const model of models) {
+    // Retry once on transient demand spikes (503/429)
+    for (let attempt = 0; attempt <= 1; attempt++) {
+      try {
+        if (attempt > 0) {
+          await sleep(350 * attempt);
+        }
+        const payload = requestFn(model);
+        const response = await ai.models.generateContent({
+          model,
+          ...payload,
+        });
+        return { response, model };
+      } catch (err: any) {
+        lastError = err;
+        const msg = err?.message || String(err);
+        const status = err?.status || err?.code || (msg.includes('503') ? 503 : (msg.includes('429') ? 429 : null));
+
+        if (status === 404 || msg.includes('404') || msg.includes('not found') || msg.includes('no longer available')) {
+          break; // Skip non-existent model
+        }
+
+        if ((status === 503 || status === 429 || msg.includes('high demand') || msg.includes('UNAVAILABLE') || msg.includes('RESOURCE_EXHAUSTED')) && attempt === 0) {
+          continue; // Retry with small backoff once
+        }
+        break; // Try next model in cascade
+      }
+    }
+  }
+  throw lastError;
+}
+
 // 1. Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
@@ -42,7 +86,7 @@ app.post('/api/triage', async (req, res) => {
 
   const ai = getAI();
 
-  // If Gemini API Key is available, run high-speed model classification
+  // If Gemini API Key is available, run high-speed model classification with multi-model cascade
   if (ai) {
     try {
       const prompt = `You are the AI Triage Engine for TechnoResolve Desk, an IT support desk.
@@ -64,17 +108,14 @@ Respond ONLY with valid JSON:
   "suggested_first_response": "Polite initial acknowledgement."
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.7-flash',
+      const { response, model } = await executeGeminiWithFallback(ai, TEXT_MODELS, (m) => ({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
           temperature: 0.1,
-          thinkingConfig: {
-            thinkingLevel: ThinkingLevel.LOW,
-          },
+          ...(m.includes('3.7') ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } } : {}),
         },
-      });
+      }));
 
       const text = response.text?.trim() || '{}';
       const parsed = JSON.parse(text);
@@ -87,9 +128,10 @@ Respond ONLY with valid JSON:
           reasoning: parsed.reasoning || 'Automated triage based on request scope and keywords.',
           suggested_first_response: parsed.suggested_first_response || '',
         },
+        modelUsed: model,
       });
-    } catch (err: any) {
-      console.warn('AI triage notice, using instant heuristic fallback:', err?.message || err);
+    } catch {
+      // Seamlessly fall through to heuristic engine without noise
     }
   }
 
@@ -159,23 +201,20 @@ ${(messages || []).slice(-4).map((m: any) => `[${m.author_role} - ${m.author_nam
 
 Reply directly with just the clean message body. No markdown backticks or commentary.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.7-flash',
+      const { response } = await executeGeminiWithFallback(ai, TEXT_MODELS, (m) => ({
         contents: prompt,
         config: {
           temperature: 0.2,
-          thinkingConfig: {
-            thinkingLevel: ThinkingLevel.LOW,
-          },
+          ...(m.includes('3.7') ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } } : {}),
         },
-      });
+      }));
 
       const suggestion = response.text?.trim();
       if (suggestion) {
         return res.json({ suggestion });
       }
-    } catch (err: any) {
-      console.warn('AI reply draft notice, using fast template fallback:', err?.message || err);
+    } catch {
+      // Quietly fall back to template
     }
   }
 
@@ -230,72 +269,38 @@ app.post('/api/transcribe', async (req, res) => {
 
   const ai = getAI();
   if (ai) {
-    // List of viable models in priority order
-    const modelsToTry = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
-    let lastError: any = null;
-
-    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-    for (const model of modelsToTry) {
-      // Try with retry and backoff on transient errors like 503 / 429
-      const maxRetries = 2;
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          if (attempt > 0) {
-            await sleep(attempt * 600);
-          }
-
-          const response = await ai.models.generateContent({
-            model,
-            contents: [
+    try {
+      const { response } = await executeGeminiWithFallback(ai, AUDIO_MODELS, (m) => ({
+        contents: [
+          {
+            role: 'user',
+            parts: [
               {
-                role: 'user',
-                parts: [
-                  {
-                    inlineData: {
-                      mimeType: mimeType || 'audio/webm',
-                      data: audioData,
-                    },
-                  },
-                  {
-                    text: 'Accurately transcribe the spoken words in this audio recording. Return ONLY the transcribed text verbatim without any introductory remarks, markdown formatting, explanations, or quotes.',
-                  },
-                ],
+                inlineData: {
+                  mimeType: mimeType || 'audio/webm',
+                  data: audioData,
+                },
+              },
+              {
+                text: 'Accurately transcribe the spoken words in this audio recording. Return ONLY the transcribed text verbatim without any introductory remarks, markdown formatting, explanations, or quotes.',
               },
             ],
-            config: {
-              temperature: 0.1,
-              thinkingConfig: {
-                thinkingLevel: ThinkingLevel.LOW,
-              },
-            },
-          });
+          },
+        ],
+        config: {
+          temperature: 0.1,
+          ...(m.includes('3.7') ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } } : {}),
+        },
+      }));
 
-          const transcript = response.text?.trim() || '';
-          return res.json({ success: true, transcript });
-        } catch (err: any) {
-          lastError = err;
-          const status = err?.status || err?.code || (err?.message?.includes('503') ? 503 : (err?.message?.includes('404') ? 404 : null));
-          console.warn(`Model ${model} (attempt ${attempt + 1}/${maxRetries + 1}) transcription notice:`, err?.message || err);
-
-          // If model is 404 (not found / deprecated), do not retry this model; jump to next
-          if (status === 404 || err?.message?.includes('404') || err?.message?.includes('no longer available')) {
-            break;
-          }
-
-          // If not the last attempt and error is 503 / 429 / overloaded, retry with backoff
-          if (attempt < maxRetries && (status === 503 || status === 429 || err?.message?.includes('high demand') || err?.message?.includes('UNAVAILABLE') || err?.message?.includes('RESOURCE_EXHAUSTED'))) {
-            continue;
-          }
-        }
-      }
+      const transcript = response.text?.trim() || '';
+      return res.json({ success: true, transcript });
+    } catch (err: any) {
+      return res.status(500).json({
+        error: 'AI transcription service temporarily busy. Please try speaking again or type your message.',
+        details: err?.message || 'Server demand peak',
+      });
     }
-
-    console.error('Audio transcription all models exhausted:', lastError);
-    return res.status(500).json({
-      error: 'AI transcription service temporarily busy. Please try speaking again or type your message.',
-      details: lastError?.message || 'Server demand peak'
-    });
   }
 
   return res.status(503).json({ error: 'AI audio transcription service unavailable (missing GEMINI_API_KEY).' });
@@ -312,7 +317,6 @@ app.post('/api/helpdesk-chat', async (req, res) => {
   const ai = getAI();
 
   if (ai) {
-    const modelsToTry = ['gemini-3.7-flash', 'gemini-2.5-flash'];
     const systemInstruction = `You are "ResolveBot", the dedicated AI Helpdesk Assistant for TechnoResolve Desk, an enterprise IT service management platform.
 Your goal is to assist customers and employees with IT issues, password/access requests, network troubleshooting, hardware and software inquiries, and service requests.
 
@@ -343,27 +347,22 @@ Guidelines:
       },
     ];
 
-    for (const model of modelsToTry) {
-      try {
-        const response = await ai.models.generateContent({
-          model,
-          contents,
-          config: {
-            systemInstruction,
-            temperature: 0.3,
-            thinkingConfig: {
-              thinkingLevel: ThinkingLevel.LOW,
-            },
-          },
-        });
+    try {
+      const { response, model } = await executeGeminiWithFallback(ai, TEXT_MODELS, (m) => ({
+        contents,
+        config: {
+          systemInstruction,
+          temperature: 0.3,
+          ...(m.includes('3.7') ? { thinkingConfig: { thinkingLevel: ThinkingLevel.LOW } } : {}),
+        },
+      }));
 
-        const reply = response.text?.trim();
-        if (reply) {
-          return res.json({ success: true, reply, modelUsed: model });
-        }
-      } catch (err: any) {
-        console.warn(`Helpdesk AI chat with ${model} failed, trying next:`, err?.message || err);
+      const reply = response.text?.trim();
+      if (reply) {
+        return res.json({ success: true, reply, modelUsed: model });
       }
+    } catch {
+      // Quietly fall through to smart heuristic fallback
     }
   }
 
