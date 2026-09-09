@@ -269,6 +269,10 @@ export async function saveMessageToFirestore(message: TicketMessage): Promise<vo
 
 // Save User in Firestore
 export async function saveUserToFirestore(user: UserProfile): Promise<void> {
+  // Ensure Firebase Auth is active to comply with Firestore security rules
+  if (!auth.currentUser) {
+    return;
+  }
   try {
     const cleaned = cleanForFirestore(user);
     await setDoc(doc(db, COLLECTIONS.USERS, user.id), cleaned, { merge: true });
@@ -281,6 +285,10 @@ export async function updateUserInFirestore(
   userId: string,
   updates: Partial<UserProfile>
 ): Promise<void> {
+  // Ensure Firebase Auth is active to comply with Firestore security rules
+  if (!auth.currentUser) {
+    return;
+  }
   try {
     const docRef = doc(db, COLLECTIONS.USERS, userId);
     const cleaned = cleanForFirestore(updates);

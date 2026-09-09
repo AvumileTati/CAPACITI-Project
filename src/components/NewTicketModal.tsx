@@ -24,11 +24,13 @@ export const NewTicketModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   initialCategory?: TicketCategory;
-}> = ({ isOpen, onClose, initialCategory }) => {
+  initialTitle?: string;
+  initialDescription?: string;
+}> = ({ isOpen, onClose, initialCategory, initialTitle, initialDescription }) => {
   const { createTicket, currentUser, isAIClassifying } = useApp();
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState(initialTitle || '');
+  const [description, setDescription] = useState(initialDescription || '');
   const [company, setCompany] = useState(currentUser?.company || '');
   
   const [selectedCategory, setSelectedCategory] = useState<TicketCategory | ''>(
@@ -37,6 +39,15 @@ export const NewTicketModal: React.FC<{
   const [attachments, setAttachments] = useState<{ id: string; file: File; previewUrl: string; size: number }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Sync props when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      if (initialCategory !== undefined) setSelectedCategory(initialCategory);
+      if (initialTitle !== undefined) setTitle(initialTitle);
+      if (initialDescription !== undefined) setDescription(initialDescription);
+    }
+  }, [isOpen, initialCategory, initialTitle, initialDescription]);
 
   // Hook-based Voice input with live preview & Gemini AI transcription fallback
   const {

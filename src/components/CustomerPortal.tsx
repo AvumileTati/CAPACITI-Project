@@ -27,6 +27,7 @@ import {
 import { RoleSwitcher } from './RoleSwitcher';
 import { NewTicketModal } from './NewTicketModal';
 import { TicketChatModal } from './TicketChatModal';
+import { HelpdeskAssistant } from './HelpdeskAssistant';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const CustomerPortal: React.FC = () => {
@@ -40,10 +41,20 @@ export const CustomerPortal: React.FC = () => {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'home' | 'tickets' | 'account' | 'help'>('home');
+  const [helpSubTab, setHelpSubTab] = useState<'assistant' | 'faq'>('assistant');
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
   const [preselectedCategory, setPreselectedCategory] = useState<TicketCategory | undefined>();
+  const [preselectedTitle, setPreselectedTitle] = useState<string | undefined>();
+  const [preselectedDescription, setPreselectedDescription] = useState<string | undefined>();
   const [activeChatTicket, setActiveChatTicket] = useState<Ticket | null>(null);
+
+  const handleOpenNewTicket = (prefill?: { category?: TicketCategory; title?: string; description?: string }) => {
+    setPreselectedCategory(prefill?.category);
+    setPreselectedTitle(prefill?.title);
+    setPreselectedDescription(prefill?.description);
+    setIsNewTicketOpen(true);
+  };
 
   // Tickets for current user or all general demo tickets
   const myTickets = useMemo(() => {
@@ -521,47 +532,191 @@ export const CustomerPortal: React.FC = () => {
               transition={{ duration: 0.2 }}
               className="space-y-4"
             >
-              <div className="space-y-1">
-                <h1 className="text-2xl font-extrabold text-slate-900">Help Centre</h1>
-                <p className="text-xs text-slate-500">Search verified self-help guides and quick fixes</p>
-              </div>
+              {/* Header with Sub-tab Switcher & Actions */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Help Centre</h1>
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 flex items-center gap-1 border border-blue-200 shadow-2xs">
+                      <Sparkles className="size-3 text-blue-600" /> AI-Powered
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">Instant AI troubleshooting, verified technical procedures & ticket dispatch</p>
+                </div>
 
-              {/* Search Bar */}
-              <div className="bg-white border border-slate-200/90 rounded-xl px-4 py-3 shadow-xs flex items-center gap-2.5">
-                <Search className="size-4 text-slate-400 shrink-0" />
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search articles (e.g. Wi-Fi, VPN, password reset)..."
-                  className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="text-xs text-slate-400 hover:text-slate-700">
-                    Clear
-                  </button>
-                )}
-              </div>
+                <div className="flex items-center gap-2">
+                  <div className="bg-slate-200/80 p-1 rounded-xl flex items-center border border-slate-300/60 shadow-2xs">
+                    <button
+                      onClick={() => setHelpSubTab('assistant')}
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        helpSubTab === 'assistant'
+                          ? 'bg-white text-blue-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <Bot className="size-3.5" />
+                      <span>AI Assistant</span>
+                    </button>
+                    <button
+                      onClick={() => setHelpSubTab('faq')}
+                      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        helpSubTab === 'faq'
+                          ? 'bg-white text-blue-700 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <FileText className="size-3.5" />
+                      <span>Knowledge Base ({FAQ_ITEMS.length})</span>
+                    </button>
+                  </div>
 
-              {/* FAQ List */}
-              <div className="space-y-2.5">
-                {filteredFaqs.map((faq) => (
-                  <details
-                    key={faq.q}
-                    className="bg-white border border-slate-200/80 rounded-xl p-4.5 group open:border-blue-400 shadow-xs transition-all"
+                  <button
+                    onClick={() => handleOpenNewTicket()}
+                    className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-xs cursor-pointer"
                   >
-                    <summary className="cursor-pointer font-bold text-sm text-slate-900 flex items-center justify-between list-none">
-                      <span className="flex items-center gap-2">
-                        <HelpCircle className="size-4 text-blue-600" />
-                        {faq.q}
-                      </span>
-                      <span className="text-xs text-slate-400 group-open:rotate-90 transition-transform">▸</span>
-                    </summary>
-                    <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed pl-6 border-l-2 border-blue-400">
-                      {faq.a}
-                    </p>
-                  </details>
-                ))}
+                    <Plus className="size-3.5" />
+                    <span>Create Ticket</span>
+                  </button>
+                </div>
               </div>
+
+              {/* TAB 1: AI HELPDESK ASSISTANT */}
+              {helpSubTab === 'assistant' && (
+                <div className="space-y-4">
+                  <HelpdeskAssistant
+                    onOpenNewTicket={handleOpenNewTicket}
+                  />
+
+                  {/* Knowledge Base Fast Strip */}
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="size-4 text-blue-600" />
+                        <h3 className="font-bold text-xs sm:text-sm text-slate-900">Verified Knowledge Base Highlights</h3>
+                      </div>
+                      <button
+                        onClick={() => setHelpSubTab('faq')}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>View all articles</span>
+                        <ChevronRight className="size-3" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {FAQ_ITEMS.slice(0, 3).map((item) => (
+                        <div
+                          key={item.q}
+                          onClick={() => {
+                            setHelpSubTab('faq');
+                            setSearchQuery(item.q.slice(0, 20));
+                          }}
+                          className="p-3 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-blue-50/50 hover:border-blue-200 transition-all cursor-pointer group"
+                        >
+                          <p className="font-bold text-xs text-slate-800 group-hover:text-blue-700 line-clamp-2 mb-1">
+                            {item.q}
+                          </p>
+                          <p className="text-[11px] text-slate-500 line-clamp-2">
+                            {item.a}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: KNOWLEDGE BASE ARTICLES */}
+              {helpSubTab === 'faq' && (
+                <div className="space-y-4">
+                  {/* Search Bar */}
+                  <div className="bg-white border border-slate-200/90 rounded-xl px-4 py-3 shadow-xs flex items-center gap-2.5">
+                    <Search className="size-4 text-slate-400 shrink-0" />
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search articles (e.g. Wi-Fi, VPN, password reset)..."
+                      className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                    />
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery('')} className="text-xs text-slate-400 hover:text-slate-700 cursor-pointer">
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Ask Assistant Banner */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-2xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-8 rounded-lg bg-blue-600 text-white grid place-items-center shrink-0">
+                        <Bot className="size-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">Need immediate interactive troubleshooting?</p>
+                        <p className="text-[11px] text-slate-600">Chat directly with ResolveBot, our 24/7 AI Helpdesk Assistant.</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setHelpSubTab('assistant')}
+                      className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shrink-0 transition-colors shadow-2xs cursor-pointer"
+                    >
+                      Chat with Assistant
+                    </button>
+                  </div>
+
+                  {/* FAQ List */}
+                  <div className="space-y-2.5">
+                    {filteredFaqs.map((faq) => (
+                      <details
+                        key={faq.q}
+                        className="bg-white border border-slate-200/80 rounded-xl p-4.5 group open:border-blue-400 shadow-xs transition-all"
+                      >
+                        <summary className="cursor-pointer font-bold text-sm text-slate-900 flex items-center justify-between list-none">
+                          <span className="flex items-center gap-2">
+                            <HelpCircle className="size-4 text-blue-600" />
+                            {faq.q}
+                          </span>
+                          <span className="text-xs text-slate-400 group-open:rotate-90 transition-transform">▸</span>
+                        </summary>
+                        <div className="mt-3 pl-6 border-l-2 border-blue-400 space-y-3">
+                          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                            {faq.a}
+                          </p>
+                          <div className="flex items-center gap-2 pt-1">
+                            <button
+                              onClick={() => {
+                                handleOpenNewTicket({
+                                  title: faq.q,
+                                  description: `Assistance needed regarding: ${faq.q}\nReference: ${faq.a}`,
+                                  category: faq.category as TicketCategory,
+                                });
+                              }}
+                              className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                            >
+                              <Plus className="size-3" />
+                              <span>Create support ticket for this</span>
+                            </button>
+                          </div>
+                        </div>
+                      </details>
+                    ))}
+
+                    {filteredFaqs.length === 0 && (
+                      <div className="text-center py-10 bg-white rounded-xl border border-slate-200/80 p-6 space-y-2">
+                        <p className="text-sm font-semibold text-slate-700">No articles matched "{searchQuery}"</p>
+                        <p className="text-xs text-slate-500">Try searching for keywords like "VPN", "Wi-Fi", "password", or ask our AI Assistant.</p>
+                        <button
+                          onClick={() => setHelpSubTab('assistant')}
+                          className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold cursor-pointer hover:bg-blue-700"
+                        >
+                          <Bot className="size-3.5" />
+                          <span>Ask AI Assistant instead</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -570,8 +725,15 @@ export const CustomerPortal: React.FC = () => {
       {/* Modals */}
       <NewTicketModal
         isOpen={isNewTicketOpen}
-        onClose={() => setIsNewTicketOpen(false)}
+        onClose={() => {
+          setIsNewTicketOpen(false);
+          setPreselectedCategory(undefined);
+          setPreselectedTitle(undefined);
+          setPreselectedDescription(undefined);
+        }}
         initialCategory={preselectedCategory}
+        initialTitle={preselectedTitle}
+        initialDescription={preselectedDescription}
       />
 
       <TicketChatModal
