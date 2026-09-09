@@ -45,8 +45,11 @@ export const LandingPage: React.FC<{
       {/* Top Header */}
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-5 bg-[#123333] text-white border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="grid size-10 place-items-center rounded-xl bg-[#00d492] text-[#123333] shadow-md font-bold">
-            <Bot className="size-5" />
+          <div
+            style={{ borderColor: '#000000', color: '#000000', backgroundColor: '#ffffff' }}
+            className="grid size-10 place-items-center rounded-xl bg-white border border-black text-black shadow-md font-bold overflow-hidden"
+          >
+            <Bot style={{ height: '40px', width: '40px' }} className="size-10 text-black p-1" />
           </div>
           <div>
             <span className="font-display text-lg font-bold tracking-tight text-white">TechnoResolve Desk</span>
@@ -56,7 +59,8 @@ export const LandingPage: React.FC<{
           <button
             id="landing-signin-btn"
             onClick={() => currentUser ? setActivePage('dashboard') : onOpenAuth()}
-            className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[#123333] transition-all hover:bg-slate-100 shadow-sm cursor-pointer"
+            style={{ color: '#000000' }}
+            className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-black transition-all hover:bg-slate-100 shadow-sm cursor-pointer"
           >
             {currentUser ? 'Dashboard' : 'Sign in'}
           </button>
@@ -106,19 +110,19 @@ export const LandingPage: React.FC<{
             <button
               id="hero-get-started-btn"
               onClick={onOpenAuth}
-              style={{ backgroundColor: '#ffffff', color: '#123333' }}
+              style={{ backgroundColor: '#ffffff', color: '#000000' }}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-bold transition-all hover:bg-slate-100 shadow-md cursor-pointer"
             >
-              <span>Launch Desk</span>
-              <ArrowRight className="size-4 text-[#123333]" />
+              <span style={{ color: '#000000' }} className="text-black">Launch Desk</span>
+              <ArrowRight className="size-4 text-black" />
             </button>
             <button
               id="hero-submit-request-btn"
               onClick={onOpenNewTicket}
-              style={{ backgroundColor: '#fbfafa', color: '#123333' }}
+              style={{ backgroundColor: '#fbfafa', color: '#000000' }}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-8 py-4 text-base font-bold transition-all hover:bg-white shadow-md cursor-pointer"
             >
-              <span className="text-[#123333] font-extrabold">Submit a request</span>
+              <span style={{ color: '#000000' }} className="text-black font-extrabold">Submit a request</span>
             </button>
           </motion.div>
 
@@ -130,15 +134,15 @@ export const LandingPage: React.FC<{
             className="flex flex-wrap items-center justify-center gap-6 md:gap-8 pt-6 text-sm font-semibold text-white/90"
           >
             <span className="flex items-center gap-2">
-              <CheckCircle2 className="size-4.5 text-[#00d492]" />
+              <CheckCircle2 style={{ color: '#000000' }} className="size-4.5 text-black" />
               Zero setup required
             </span>
             <span className="flex items-center gap-2">
-              <Lock className="size-4.5 text-[#00d492]" />
+              <Lock style={{ color: '#000000' }} className="size-4.5 text-black" />
               Role-based access control
             </span>
             <span className="flex items-center gap-2">
-              <Layers className="size-4.5 text-[#00d492]" />
+              <Layers style={{ color: '#000000' }} className="size-4.5 text-black" />
               Gemini AI Triage Engine
             </span>
           </motion.div>
