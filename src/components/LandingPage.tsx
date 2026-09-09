@@ -64,7 +64,10 @@ export const LandingPage: React.FC<{
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-12 md:pt-16 bg-[#123333]">
+      <main
+        style={{ borderColor: '#585454' }}
+        className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-12 md:pt-16 bg-[#123333]"
+      >
         
         {/* ================= 1. HERO SECTION ================= */}
         <div className="max-w-4xl mx-auto text-center space-y-8 mb-20">
@@ -269,8 +272,11 @@ export const LandingPage: React.FC<{
               className="rounded-3xl bg-[#0c2424] border border-white/10 p-8 shadow-xl flex flex-col justify-between group hover:border-[#00d492]/40 transition-all"
             >
               <div>
-                <div className="size-14 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-400 flex items-center justify-center mb-6">
-                  <LifeBuoy className="size-7" />
+                <div
+                  style={{ backgroundColor: '#ffffff', color: '#000000', borderColor: '#000000' }}
+                  className="size-14 rounded-2xl bg-white border border-black text-black flex items-center justify-center mb-6 shadow-sm"
+                >
+                  <LifeBuoy className="size-7 text-black" />
                 </div>
                 <h3 className="text-2xl font-bold text-white font-display mb-3">
                   End-User Self-Service Storefront
@@ -281,24 +287,33 @@ export const LandingPage: React.FC<{
 
                 <ul className="space-y-3.5 text-sm text-slate-200">
                   <li className="flex items-start gap-3">
-                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
-                      <Check className="size-3.5" />
+                    <div
+                      style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                      className="size-5 rounded-md bg-white border border-black text-black grid place-items-center shrink-0 mt-0.5 shadow-sm"
+                    >
+                      <Check className="size-3.5 text-black" />
                     </div>
                     <span>
                       Instant ticket logging button (<strong className="text-white font-mono text-xs">+ Submit a new request</strong>)
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
-                      <Check className="size-3.5" />
+                    <div
+                      style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                      className="size-5 rounded-md bg-white border border-black text-black grid place-items-center shrink-0 mt-0.5 shadow-sm"
+                    >
+                      <Check className="size-3.5 text-black" />
                     </div>
                     <span>
                       Real-time ticket history with live status badges
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
-                      <Check className="size-3.5" />
+                    <div
+                      style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                      className="size-5 rounded-md bg-white border border-black text-black grid place-items-center shrink-0 mt-0.5 shadow-sm"
+                    >
+                      <Check className="size-3.5 text-black" />
                     </div>
                     <span>
                       Transparent issue tracking without support blind spots
@@ -310,10 +325,11 @@ export const LandingPage: React.FC<{
               <div className="mt-8 pt-6 border-t border-white/10">
                 <button
                   onClick={onOpenNewTicket}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#123333] hover:bg-[#1a4444] border border-[#00d492]/40 text-[#00d492] text-xs font-bold transition-all cursor-pointer"
+                  style={{ backgroundColor: '#ffffff', color: '#000000', borderColor: '#000000' }}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white border border-black text-black text-xs font-bold transition-all hover:bg-slate-100 cursor-pointer shadow-sm"
                 >
-                  <PlusCircle className="size-4" />
-                  <span>Submit Sample Request</span>
+                  <PlusCircle className="size-4 text-black" />
+                  <span className="text-black">Submit Sample Request</span>
                 </button>
               </div>
             </motion.div>
@@ -327,8 +343,11 @@ export const LandingPage: React.FC<{
               className="rounded-3xl bg-[#0c2424] border border-white/10 p-8 shadow-xl flex flex-col justify-between group hover:border-[#00d492]/40 transition-all"
             >
               <div style={{ color: '#000000' }}>
-                <div className="size-14 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center mb-6">
-                  <Zap className="size-7" />
+                <div
+                  style={{ backgroundColor: '#ffffff', color: '#000000', borderColor: '#000000' }}
+                  className="size-14 rounded-2xl bg-white border border-black text-black flex items-center justify-center mb-6 shadow-sm"
+                >
+                  <Zap className="size-7 text-black" />
                 </div>
                 <h3 className="text-2xl font-bold text-white font-display mb-3">
                   Technician Workspace
@@ -339,24 +358,33 @@ export const LandingPage: React.FC<{
 
                 <ul className="space-y-3.5 text-sm text-slate-200">
                   <li className="flex items-start gap-3">
-                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
-                      <Check className="size-3.5" />
+                    <div
+                      style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                      className="size-5 rounded-md bg-white border border-black text-black grid place-items-center shrink-0 mt-0.5 shadow-sm"
+                    >
+                      <Check className="size-3.5 text-black" />
                     </div>
                     <span>
                       Filterable dynamic queues: <strong className="text-white font-mono text-xs">New</strong>, <strong className="text-white font-mono text-xs">Working</strong>, <strong className="text-white font-mono text-xs">Escalated</strong> with real-time counters
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
-                      <Check className="size-3.5" />
+                    <div
+                      style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                      className="size-5 rounded-md bg-white border border-black text-black grid place-items-center shrink-0 mt-0.5 shadow-sm"
+                    >
+                      <Check className="size-3.5 text-black" />
                     </div>
                     <span>
                       Rapid action buttons: <strong className="text-white font-mono text-xs">Take</strong>, <strong className="text-white font-mono text-xs">Escalate</strong>, and <strong className="text-white font-mono text-xs">Resolve</strong>
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
-                      <Check className="size-3.5" />
+                    <div
+                      style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                      className="size-5 rounded-md bg-white border border-black text-black grid place-items-center shrink-0 mt-0.5 shadow-sm"
+                    >
+                      <Check className="size-3.5 text-black" />
                     </div>
                     <span>
                       Integrated direct ticket messaging with quick response templates (<strong className="text-white font-mono text-xs">Acknowledge</strong>, <strong className="text-white font-mono text-xs">Need Info</strong>)
@@ -368,10 +396,11 @@ export const LandingPage: React.FC<{
               <div className="mt-8 pt-6 border-t border-white/10">
                 <button
                   onClick={() => currentUser ? setActivePage('dashboard') : onOpenAuth()}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#123333] hover:bg-[#1a4444] border border-purple-500/40 text-purple-300 text-xs font-bold transition-all cursor-pointer"
+                  style={{ backgroundColor: '#ffffff', color: '#000000', borderColor: '#000000' }}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white border border-black text-black text-xs font-bold transition-all hover:bg-slate-100 cursor-pointer shadow-sm"
                 >
-                  <SlidersHorizontal className="size-4" />
-                  <span>Open Tech Workspace</span>
+                  <SlidersHorizontal className="size-4 text-black" />
+                  <span className="text-black">Open Tech Workspace</span>
                 </button>
               </div>
             </motion.div>
@@ -385,8 +414,11 @@ export const LandingPage: React.FC<{
               className="rounded-3xl bg-[#0c2424] border border-white/10 p-8 shadow-xl flex flex-col justify-between group hover:border-[#00d492]/40 transition-all"
             >
               <div>
-                <div className="size-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center mb-6">
-                  <ShieldCheck className="size-7" />
+                <div
+                  style={{ backgroundColor: '#ffffff', color: '#000000', borderColor: '#000000' }}
+                  className="size-14 rounded-2xl bg-white border border-black text-black flex items-center justify-center mb-6 shadow-sm"
+                >
+                  <ShieldCheck className="size-7 text-black" />
                 </div>
                 <h3 className="text-2xl font-bold text-white font-display mb-3">
                   Admin Control Center
@@ -397,24 +429,33 @@ export const LandingPage: React.FC<{
 
                 <ul className="space-y-3.5 text-sm text-slate-200">
                   <li className="flex items-start gap-3">
-                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
-                      <Check className="size-3.5" />
+                    <div
+                      style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                      className="size-5 rounded-md bg-white border border-black text-black grid place-items-center shrink-0 mt-0.5 shadow-sm"
+                    >
+                      <Check className="size-3.5 text-black" />
                     </div>
                     <span>
                       High-level metric cards: <strong className="text-white font-mono text-xs">Total requests ({totalTickets})</strong>, <strong className="text-white font-mono text-xs">Open workload ({openTickets})</strong>, and <strong className="text-white font-mono text-xs">Urgent ({urgentTickets})</strong>
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
-                      <Check className="size-3.5" />
+                    <div
+                      style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                      className="size-5 rounded-md bg-white border border-black text-black grid place-items-center shrink-0 mt-0.5 shadow-sm"
+                    >
+                      <Check className="size-3.5 text-black" />
                     </div>
                     <span>
                       Operational workload tracking and incident oversight
                     </span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <div className="size-5 rounded-md bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0 mt-0.5">
-                      <Check className="size-3.5" />
+                    <div
+                      style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                      className="size-5 rounded-md bg-white border border-black text-black grid place-items-center shrink-0 mt-0.5 shadow-sm"
+                    >
+                      <Check className="size-3.5 text-black" />
                     </div>
                     <span>
                       Role-switching selector to audit user, technician, and admin views seamlessly
@@ -426,10 +467,11 @@ export const LandingPage: React.FC<{
               <div className="mt-8 pt-6 border-t border-white/10">
                 <button
                   onClick={() => currentUser ? setActivePage('dashboard') : onOpenAuth()}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#123333] hover:bg-[#1a4444] border border-rose-500/40 text-rose-300 text-xs font-bold transition-all cursor-pointer"
+                  style={{ backgroundColor: '#ffffff', color: '#000000', borderColor: '#000000' }}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white border border-black text-black text-xs font-bold transition-all hover:bg-slate-100 cursor-pointer shadow-sm"
                 >
-                  <BarChart3 className="size-4" />
-                  <span>Access Admin Control</span>
+                  <BarChart3 className="size-4 text-black" />
+                  <span className="text-black">Access Admin Control</span>
                 </button>
               </div>
             </motion.div>
@@ -442,15 +484,19 @@ export const LandingPage: React.FC<{
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mb-24 rounded-3xl bg-[#0c2424] border border-[#00d492]/30 p-8 md:p-10 shadow-2xl relative overflow-hidden"
+          style={{ color: '#ffffff', borderColor: '#7e7e7e', backgroundColor: '#0c2424' }}
+          className="mb-24 rounded-3xl bg-[#0c2424] border border-[#7e7e7e] p-8 md:p-10 shadow-2xl relative overflow-hidden text-white"
         >
           <div className="absolute top-0 right-0 w-80 h-80 bg-[#00d492]/10 blur-[100px] pointer-events-none rounded-full" />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10 divide-y md:divide-y-0 md:divide-x divide-white/10">
             {/* Metric 1 */}
             <div className="flex items-start gap-4 pt-4 md:pt-0 md:px-4 first:pl-0">
-              <div className="size-12 rounded-2xl bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0">
-                <Bot className="size-6" />
+              <div
+                style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                className="size-12 rounded-2xl bg-white border border-black text-black grid place-items-center shrink-0 shadow-sm"
+              >
+                <Bot className="size-6 text-black" />
               </div>
               <div>
                 <h4 className="text-lg font-bold text-white font-display">Zero Manual Sorting</h4>
@@ -462,8 +508,11 @@ export const LandingPage: React.FC<{
 
             {/* Metric 2 */}
             <div className="flex items-start gap-4 pt-6 md:pt-0 md:px-6">
-              <div className="size-12 rounded-2xl bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0">
-                <TrendingDown className="size-6" />
+              <div
+                style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                className="size-12 rounded-2xl bg-white border border-black text-black grid place-items-center shrink-0 shadow-sm"
+              >
+                <TrendingDown className="size-6 text-black" />
               </div>
               <div>
                 <h4 className="text-lg font-bold text-white font-display">Reduced MTTR</h4>
@@ -475,8 +524,11 @@ export const LandingPage: React.FC<{
 
             {/* Metric 3 */}
             <div className="flex items-start gap-4 pt-6 md:pt-0 md:px-6 last:pr-0">
-              <div className="size-12 rounded-2xl bg-[#123333] border border-[#00d492]/30 text-[#00d492] grid place-items-center shrink-0">
-                <Eye className="size-6" />
+              <div
+                style={{ backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }}
+                className="size-12 rounded-2xl bg-white border border-black text-black grid place-items-center shrink-0 shadow-sm"
+              >
+                <Eye className="size-6 text-black" />
               </div>
               <div>
                 <h4 className="text-lg font-bold text-white font-display">Full Operational Visibility</h4>
@@ -510,7 +562,7 @@ export const LandingPage: React.FC<{
                 style={{ backgroundColor: '#ffffff', color: '#123333' }}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-bold transition-all hover:bg-slate-100 shadow-md cursor-pointer"
               >
-                <span>{currentUser ? 'Open Dashboard' : 'Launch Desk'}</span>
+                <span style={{ color: '#000000' }}>{currentUser ? 'Open Dashboard' : 'Launch Desk'}</span>
                 <ArrowRight className="size-4 text-[#123333]" />
               </button>
               <button
@@ -519,7 +571,7 @@ export const LandingPage: React.FC<{
                 style={{ backgroundColor: '#fbfafa', color: '#123333' }}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 px-8 py-4 text-base font-bold transition-all hover:bg-white shadow-md cursor-pointer"
               >
-                <span className="text-[#00d492] font-extrabold">Submit a Request</span>
+                <span style={{ color: '#000000' }} className="text-black font-extrabold">Submit a Request</span>
               </button>
             </div>
           </div>
