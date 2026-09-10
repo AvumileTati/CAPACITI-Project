@@ -295,16 +295,20 @@ export const TicketChatModal: React.FC<{
 
         {/* Conversation Stream */}
         <div className="flex-1 space-y-4 overflow-y-auto p-5 bg-background/50">
-          {/* Initial Ticket Description Card */}
-          <div className="rounded-xl border border-border/80 bg-surface p-4 shadow-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-border/40 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground flex items-center gap-1.5">
-                <User className="size-3.5 text-primary" />
-                {ticket.requester_name} (Initial Request)
+          {/* Initial Ticket Description Card (Customer - White card on Left) */}
+          <div className="rounded-2xl rounded-tl-xs border border-slate-200/90 bg-white dark:bg-slate-800 dark:border-slate-700 p-4 shadow-xs text-slate-900 dark:text-slate-100 w-full">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
+              <span className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                <User className="size-3.5 text-slate-400" />
+                <span>{ticket.requester_name}</span>
+                <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                  Customer
+                </span>
+                <span className="text-[10px] font-medium text-slate-400">· Initial Request</span>
               </span>
-              <span>{new Date(ticket.created_at).toLocaleString()}</span>
+              <span>{new Date(ticket.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</span>
             </div>
-            <p className="mt-2.5 text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+            <p className="mt-2.5 text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
               {ticket.description}
             </p>
 
@@ -347,8 +351,11 @@ export const TicketChatModal: React.FC<{
 
           {/* Messages */}
           {ticketMessages.map((msg) => {
-            const isMe = msg.author_id === currentUser?.id;
             const isNote = msg.internal;
+            const isTechnician = 
+              msg.author_role === 'technician' || 
+              msg.author_role === 'admin' || 
+              (msg.author_id !== ticket.requester_id && msg.author_role !== 'user');
 
             return (
               <div
@@ -356,7 +363,7 @@ export const TicketChatModal: React.FC<{
                 className={`flex flex-col ${
                   isNote
                     ? 'items-center my-3'
-                    : isMe
+                    : isTechnician
                     ? 'items-end'
                     : 'items-start'
                 }`}
@@ -411,26 +418,35 @@ export const TicketChatModal: React.FC<{
                   </div>
                 ) : (
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-xs ${
-                      isMe
-                        ? 'bg-primary text-primary-foreground rounded-br-xs'
-                        : 'bg-surface border border-border text-foreground rounded-bl-xs'
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-xs border ${
+                      isTechnician
+                        ? 'bg-blue-600 text-white border-blue-600 rounded-tr-xs'
+                        : 'bg-white text-slate-900 border-slate-200/90 rounded-tl-xs dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700'
                     }`}
                   >
                     <div
                       className={`flex items-center justify-between gap-3 text-[11px] pb-1 ${
-                        isMe ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                        isTechnician ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'
                       }`}
                     >
-                      <span className="font-semibold flex items-center gap-1">
-                        {msg.author_role === 'technician' ? (
-                          <Wrench className="size-3" />
-                        ) : msg.author_role === 'admin' ? (
-                          <Shield className="size-3" />
+                      <span className="font-semibold flex items-center gap-1.5">
+                        {isTechnician ? (
+                          <>
+                            <Wrench className="size-3 text-blue-200" />
+                            <span>{msg.author_name}</span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-blue-500/40 text-white border border-blue-400/50">
+                              Technician
+                            </span>
+                          </>
                         ) : (
-                          <User className="size-3" />
+                          <>
+                            <User className="size-3 text-slate-400" />
+                            <span>{msg.author_name}</span>
+                            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                              Customer
+                            </span>
+                          </>
                         )}
-                        {msg.author_name}
                       </span>
                       <span>
                         {new Date(msg.created_at).toLocaleTimeString([], {
@@ -440,14 +456,14 @@ export const TicketChatModal: React.FC<{
                       </span>
                     </div>
                     {msg.body && (
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed mt-0.5">
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed mt-1">
                         {msg.body}
                       </p>
                     )}
                     
-                    {/* Render message attachments identically on both sender and receiver sides */}
+                    {/* Render message attachments */}
                     {msg.attachments && msg.attachments.length > 0 && (
-                      <div className={`mt-3 space-y-1.5 ${msg.body ? 'border-t pt-2.5' : ''} ${isMe ? 'border-primary-foreground/20' : 'border-border'}`}>
+                      <div className={`mt-3 space-y-1.5 ${msg.body ? 'border-t pt-2.5' : ''} ${isTechnician ? 'border-blue-400/40' : 'border-slate-200 dark:border-slate-700'}`}>
                         {msg.attachments.map(att => (
                           <a 
                             key={att.id || att.name}
@@ -456,25 +472,25 @@ export const TicketChatModal: React.FC<{
                             target="_blank"
                             rel="noreferrer"
                             className={`flex items-center gap-2.5 p-2 rounded-xl border transition-colors group ${
-                              isMe
-                                ? 'bg-primary-foreground/10 border-primary-foreground/20 hover:bg-primary-foreground/20 text-primary-foreground'
-                                : 'bg-background border-border hover:bg-secondary/70 text-foreground'
+                              isTechnician
+                                ? 'bg-blue-700/70 border-blue-400/50 hover:bg-blue-700 text-white'
+                                : 'bg-slate-50 border-slate-200 hover:border-blue-400 text-slate-800 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200'
                             }`}
                           >
                             <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 border overflow-hidden ${
-                              isMe ? 'bg-primary-foreground/15 border-primary-foreground/25' : 'bg-secondary border-border'
+                              isTechnician ? 'bg-blue-800 border-blue-500' : 'bg-white border-slate-200 dark:bg-slate-800 dark:border-slate-700'
                             }`}>
                               {att.type?.startsWith('image/') ? (
                                 <img src={att.url} alt={att.name} className="size-full object-cover" />
                               ) : (
-                                <FileIcon className="size-3.5 text-current opacity-90" />
+                                <FileIcon className={`size-3.5 ${isTechnician ? 'text-blue-200' : 'text-slate-400'}`} />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-semibold truncate leading-tight">{att.name}</p>
-                              <p className={`text-[10px] leading-tight mt-0.5 ${isMe ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>{formatBytes(att.size)}</p>
+                              <p className={`text-[10px] leading-tight mt-0.5 ${isTechnician ? 'text-blue-200' : 'text-slate-400'}`}>{formatBytes(att.size)}</p>
                             </div>
-                            <Download className={`size-3.5 shrink-0 mr-1 opacity-70 group-hover:opacity-100 transition-opacity ${isMe ? 'text-primary-foreground' : 'text-primary'}`} />
+                            <Download className={`size-3.5 shrink-0 mr-1 transition-opacity ${isTechnician ? 'text-blue-200 group-hover:text-white' : 'text-slate-400 group-hover:text-blue-500'}`} />
                           </a>
                         ))}
                       </div>

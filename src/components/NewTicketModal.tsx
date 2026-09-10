@@ -16,7 +16,6 @@ import {
   AlertCircle,
   Volume2
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 
@@ -163,11 +162,6 @@ export const NewTicketModal: React.FC<{
         category: selectedCategory || undefined,
         attachments: processedAttachments
       });
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { y: 0.7 },
-      });
       onClose();
       setTitle('');
       setDescription('');
@@ -196,7 +190,7 @@ export const NewTicketModal: React.FC<{
       >
         <div className="flex items-start justify-between pb-3 border-b border-border/60">
           <div>
-            <h2 className="text-xl font-bold font-display">New business request</h2>
+            <h2 className="text-xl font-bold font-display">Create New Ticket</h2>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
               <Sparkles className="size-3.5 text-primary" />
               AI reads your description and routes it for you automatically.
@@ -454,17 +448,6 @@ export const NewTicketModal: React.FC<{
                 ))}
               </div>
             )}
-          </div>
-
-          {/* AI Intelligence Feature Card */}
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-muted-foreground flex items-start gap-2.5">
-            <Sparkles className="size-4 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold text-foreground">Gemini Real-Time Triage</p>
-              <p className="mt-0.5">
-                Our model assesses urgency, extracts technical entities, routes to the on-call queue, and calculates response SLA target instantly.
-              </p>
-            </div>
           </div>
 
           <div className="pt-2 flex items-center justify-end gap-3">

@@ -849,58 +849,65 @@ export const TechnicianWorkspace: React.FC = () => {
                     <div className="flex-1 flex overflow-hidden">
                       <div className="flex-1 overflow-y-auto p-4 space-y-4">
                          
-                         {/* Customer Original */}
-                         <div className="flex gap-3">
-                           <div className={`size-6 rounded-full text-[10px] shrink-0 flex items-center justify-center font-bold ${
-                             isDarkMode ? 'bg-slate-700 text-slate-200' : 'bg-slate-300 text-slate-600'
+                         {/* Customer Original Ticket Request - White bubble on the Left, filling full width */}
+                         <div className="flex gap-3 justify-start items-start w-full">
+                           <div className={`size-7 rounded-full text-xs shrink-0 flex items-center justify-center font-bold shadow-2xs ${
+                             isDarkMode ? 'bg-slate-700 text-slate-200' : 'bg-slate-200 text-slate-700 border border-slate-300'
                            }`}>
                              {activeTicket.requester_name.charAt(0)}
                            </div>
-                           <div className="max-w-[75%] space-y-1">
+                           <div className="flex-1 min-w-0 space-y-1 text-left">
                              <div className="flex items-center gap-2">
                                <span className={`font-bold text-xs ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>{activeTicket.requester_name}</span>
+                               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                                 Customer
+                               </span>
                                <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>· {new Date(activeTicket.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                              </div>
-                             <div className={`p-2.5 rounded-lg rounded-tl-sm text-xs whitespace-pre-wrap leading-relaxed shadow-sm ${
+                             <div className={`w-full p-3.5 rounded-2xl rounded-tl-xs text-xs whitespace-pre-wrap leading-relaxed shadow-xs border ${
                                isDarkMode 
-                                 ? 'bg-[#1e293b] text-slate-100 border border-slate-700' 
-                                 : 'bg-slate-200/70 text-slate-900'
+                                 ? 'bg-[#1e293b] text-slate-100 border-slate-700' 
+                                 : 'bg-white text-slate-900 border-slate-200/90'
                              }`}>
-                               {activeTicket.description}
-                               <div className="mt-3 flex items-center justify-between">
-                                 <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${
-                                   isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-300 text-slate-700'
-                                 }`}>Original Report</span>
+                               <div className="font-semibold text-[11px] text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
+                                 <span className="inline-block size-1.5 rounded-full bg-slate-400"></span>
+                                 <span>Original Ticket Request</span>
                                </div>
+                               {activeTicket.description}
 
                                {/* Initial Attachments */}
                                {activeTicket.attachments && activeTicket.attachments.length > 0 && (
-                                 <div className={`mt-2.5 pt-2 border-t space-y-1.5 ${isDarkMode ? 'border-slate-700' : 'border-slate-300/70'}`}>
+                                 <div className={`mt-2.5 pt-2 border-t space-y-1.5 ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                                    <p className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Attachments ({activeTicket.attachments.length})</p>
-                                   {activeTicket.attachments.map(att => (
-                                     <a 
-                                       key={att.id || att.name} 
-                                       href={att.url} 
-                                       download={att.name}
-                                       target="_blank" 
-                                       rel="noreferrer"
-                                       className={`flex items-center gap-2 p-1.5 rounded-md border transition-colors group ${
-                                         isDarkMode 
-                                           ? 'bg-slate-900/80 border-slate-700 text-slate-200 hover:border-blue-500' 
-                                           : 'bg-white border-slate-300 hover:border-blue-400'
-                                       }`}
-                                     >
-                                       <div className={`size-6 rounded flex items-center justify-center shrink-0 overflow-hidden ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                                         {att.type?.startsWith('image/') ? (
-                                           <img src={att.url} alt={att.name} className="size-full object-cover" />
-                                         ) : (
-                                           <FileIcon className="size-3 text-slate-400" />
-                                         )}
-                                       </div>
-                                       <span className={`text-[11px] font-medium truncate flex-1 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{att.name}</span>
-                                       <Download className="size-3 text-slate-400 group-hover:text-blue-400 transition-colors" />
-                                     </a>
-                                   ))}
+                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                     {activeTicket.attachments.map(att => (
+                                       <a 
+                                         key={att.id || att.name} 
+                                         href={att.url} 
+                                         download={att.name}
+                                         target="_blank" 
+                                         rel="noreferrer"
+                                         className={`flex items-center gap-2 p-2 rounded-lg border transition-colors group ${
+                                           isDarkMode 
+                                             ? 'bg-slate-900/80 border-slate-700 text-slate-200 hover:border-blue-500' 
+                                             : 'bg-slate-50 border-slate-200 hover:border-blue-400'
+                                         }`}
+                                       >
+                                         <div className={`size-7 rounded flex items-center justify-center shrink-0 overflow-hidden ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`}>
+                                           {att.type?.startsWith('image/') ? (
+                                             <img src={att.url} alt={att.name} className="size-full object-cover" />
+                                           ) : (
+                                             <FileIcon className="size-3.5 text-slate-400" />
+                                           )}
+                                         </div>
+                                         <div className="flex-1 min-w-0">
+                                           <span className={`text-[11px] font-medium truncate block ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{att.name}</span>
+                                           <span className="text-[10px] text-slate-400">{formatBytes(att.size)}</span>
+                                         </div>
+                                         <Download className="size-3 text-slate-400 group-hover:text-blue-500 transition-colors shrink-0" />
+                                       </a>
+                                     ))}
+                                   </div>
                                  </div>
                                )}
                              </div>
@@ -909,13 +916,12 @@ export const TechnicianWorkspace: React.FC = () => {
 
                          {/* Messages List */}
                          {activeMessages.map(msg => {
-                           const isMe = msg.author_id === currentUser?.id;
                            const isNote = msg.internal;
 
                            if (isNote) {
                              return (
-                               <div key={msg.id} className="flex justify-center my-4">
-                                  <div className={`flex items-start gap-2 max-w-lg p-2.5 rounded-lg text-sm shadow-sm w-full border ${
+                               <div key={msg.id} className="flex justify-center my-4 w-full">
+                                  <div className={`flex items-start gap-2 max-w-2xl p-3 rounded-xl text-sm shadow-xs w-full border ${
                                     isDarkMode 
                                       ? 'bg-amber-950/40 border-amber-800/80 text-amber-200' 
                                       : 'bg-amber-50 border-amber-200 text-amber-900'
@@ -956,30 +962,106 @@ export const TechnicianWorkspace: React.FC = () => {
                              );
                            }
 
+                           // Differentiate Technician vs Customer:
+                           // Technician is Blue on the Right. Customer is White on the Left.
+                           const isTechnician = 
+                             msg.author_role === 'technician' || 
+                             msg.author_role === 'admin' || 
+                             (activeTicket && msg.author_id !== activeTicket.requester_id && msg.author_role !== 'user');
+
+                           if (isTechnician) {
+                             return (
+                               <div key={msg.id} className="flex w-full gap-3 items-start justify-end">
+                                 <div className="max-w-[85%] sm:max-w-[88%] space-y-1 text-right">
+                                   <div className="flex items-center gap-2 justify-end">
+                                     <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-400'}`}>
+                                       {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                     </span>
+                                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                       Technician
+                                     </span>
+                                     <span className={`font-bold text-xs ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>
+                                       {msg.author_name}
+                                     </span>
+                                   </div>
+
+                                   {/* Message Bubble: BLUE for Technician */}
+                                   <div className="p-3.5 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed shadow-xs text-left border bg-blue-600 text-white border-blue-600 rounded-tr-xs">
+                                     {msg.body && <p>{msg.body}</p>}
+
+                                     {/* Attachments rendering */}
+                                     {msg.attachments && msg.attachments.length > 0 && (
+                                       <div className="mt-2.5 pt-2 border-t border-blue-400/40 space-y-1.5">
+                                         {msg.attachments.map(att => (
+                                           <a 
+                                             key={att.id || att.name} 
+                                             href={att.url} 
+                                             download={att.name}
+                                             target="_blank" 
+                                             rel="noreferrer"
+                                             className="flex items-center gap-2 p-2 rounded-lg border bg-blue-700/70 border-blue-400/50 text-white hover:bg-blue-700 transition-colors group"
+                                           >
+                                             <div className="size-7 rounded flex items-center justify-center shrink-0 overflow-hidden bg-blue-800">
+                                               {att.type?.startsWith('image/') ? (
+                                                 <img src={att.url} alt={att.name} className="size-full object-cover" />
+                                               ) : (
+                                                 <FileIcon className="size-3.5 text-blue-200" />
+                                               )}
+                                             </div>
+                                             <div className="flex-1 min-w-0 text-left">
+                                               <p className="text-[11px] font-medium truncate">{att.name}</p>
+                                               <p className="text-[9px] text-blue-200">{formatBytes(att.size)}</p>
+                                             </div>
+                                             <Download className="size-3 transition-colors shrink-0 text-blue-200 group-hover:text-white" />
+                                           </a>
+                                         ))}
+                                       </div>
+                                     )}
+                                   </div>
+                                 </div>
+
+                                 {/* Technician Avatar on the far right */}
+                                 <div className="size-7 rounded-full text-xs shrink-0 flex items-center justify-center font-bold shadow-2xs bg-blue-600 text-white">
+                                   {msg.author_name.charAt(0)}
+                                 </div>
+                               </div>
+                             );
+                           }
+
+                           // Customer message aligned to the Left
                            return (
-                             <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
-                               <div className={`size-6 rounded-full text-[10px] shrink-0 flex items-center justify-center font-bold ${
-                                 isDarkMode ? 'bg-slate-700 text-slate-200' : 'bg-slate-300 text-slate-600'
+                             <div key={msg.id} className="flex w-full gap-3 items-start justify-start">
+                               {/* Customer Avatar */}
+                               <div className={`size-7 rounded-full text-xs shrink-0 flex items-center justify-center font-bold shadow-2xs ${
+                                 isDarkMode ? 'bg-slate-700 text-slate-200' : 'bg-slate-200 text-slate-700 border border-slate-300'
                                }`}>
                                  {msg.author_name.charAt(0)}
                                </div>
-                               <div className={`max-w-[75%] space-y-1 ${isMe ? 'text-right' : ''}`}>
-                                 <div className={`flex items-center gap-2 ${isMe ? 'justify-end' : ''}`}>
-                                   <span className={`font-bold text-xs ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>{msg.author_name}</span>
-                                   <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>· {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+
+                               <div className="max-w-[85%] sm:max-w-[88%] space-y-1 text-left">
+                                 <div className="flex items-center gap-2 justify-start">
+                                   <span className={`font-bold text-xs ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>
+                                     {msg.author_name}
+                                   </span>
+                                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                                     Customer
+                                   </span>
+                                   <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                     · {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                   </span>
                                  </div>
-                                 <div className={`p-2.5 rounded-lg text-xs whitespace-pre-wrap leading-relaxed shadow-sm text-left ${
-                                   isMe 
-                                     ? 'bg-blue-600 text-white rounded-tr-sm' 
-                                     : isDarkMode 
-                                     ? 'bg-[#1e293b] text-slate-100 border border-slate-700 rounded-tl-sm' 
-                                     : 'bg-slate-200/70 text-slate-900 rounded-tl-sm'
+
+                                 {/* Message Bubble: WHITE for Customer */}
+                                 <div className={`p-3.5 rounded-2xl text-xs whitespace-pre-wrap leading-relaxed shadow-xs text-left border ${
+                                   isDarkMode 
+                                     ? 'bg-[#1e293b] text-slate-100 border-slate-700 rounded-tl-xs' 
+                                     : 'bg-white text-slate-900 border-slate-200/90 rounded-tl-xs'
                                  }`}>
                                    {msg.body && <p>{msg.body}</p>}
 
-                                   {/* Attachments rendering for both sides */}
+                                   {/* Attachments rendering */}
                                    {msg.attachments && msg.attachments.length > 0 && (
-                                     <div className={`mt-2 pt-2 border-t space-y-1 ${isMe ? 'border-blue-400/50' : isDarkMode ? 'border-slate-700' : 'border-slate-300'}`}>
+                                     <div className={`mt-2.5 pt-2 border-t space-y-1.5 ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                                        {msg.attachments.map(att => (
                                          <a 
                                            key={att.id || att.name} 
@@ -987,26 +1069,24 @@ export const TechnicianWorkspace: React.FC = () => {
                                            download={att.name}
                                            target="_blank" 
                                            rel="noreferrer"
-                                           className={`flex items-center gap-2 p-1.5 rounded-md border transition-colors group ${
-                                             isMe 
-                                               ? 'bg-blue-700/60 border-blue-500 text-white hover:bg-blue-700' 
-                                               : isDarkMode 
+                                           className={`flex items-center gap-2 p-2 rounded-lg border transition-colors group ${
+                                             isDarkMode 
                                                ? 'bg-slate-900/80 border-slate-700 text-slate-200 hover:border-blue-500' 
-                                               : 'bg-white border-slate-200 hover:border-blue-400'
+                                               : 'bg-slate-50 border-slate-200 hover:border-blue-400 text-slate-800'
                                            }`}
                                          >
-                                           <div className={`size-6 rounded flex items-center justify-center shrink-0 overflow-hidden ${isMe ? 'bg-blue-800' : isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                           <div className={`size-7 rounded flex items-center justify-center shrink-0 overflow-hidden ${isDarkMode ? 'bg-slate-800' : 'bg-white'}`}>
                                              {att.type?.startsWith('image/') ? (
                                                <img src={att.url} alt={att.name} className="size-full object-cover" />
                                              ) : (
-                                               <FileIcon className={`size-3 ${isMe ? 'text-blue-200' : 'text-slate-400'}`} />
+                                               <FileIcon className="size-3.5 text-slate-400" />
                                              )}
                                            </div>
                                            <div className="flex-1 min-w-0 text-left">
                                              <p className="text-[11px] font-medium truncate">{att.name}</p>
-                                             <p className={`text-[9px] ${isMe ? 'text-blue-200' : 'text-slate-400'}`}>{formatBytes(att.size)}</p>
+                                             <p className="text-[9px] text-slate-400">{formatBytes(att.size)}</p>
                                            </div>
-                                           <Download className={`size-3 transition-colors shrink-0 ${isMe ? 'text-blue-200 group-hover:text-white' : 'text-slate-400 group-hover:text-blue-400'}`} />
+                                           <Download className="size-3 transition-colors shrink-0 text-slate-400 group-hover:text-blue-500" />
                                          </a>
                                        ))}
                                      </div>

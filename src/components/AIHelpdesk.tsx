@@ -104,7 +104,7 @@ export const AIHelpdesk: React.FC<AIHelpdeskProps> = ({ onCreateTicketClick }) =
         category = 'access';
         suggestedAction = { type: 'create_ticket', category: 'access', title: 'MFA Token Re-Enrollment' };
       } else if (/software|license|licence|seat|install|app|tool|slack|zoom|figma/i.test(lower)) {
-        answer = "To request a new software license or SaaS subscription seat:\n1. Click 'New Request' and select 'Software & Application Support'.\n2. Specify the application name, version, business justification, and department cost centre.\n3. Department managers typically review and approve software provisioning within 24 hours.";
+        answer = "To request a new software license or SaaS subscription seat:\n1. Click 'New Ticket' and select 'Software & Application Support'.\n2. Specify the application name, version, business justification, and department cost centre.\n3. Department managers typically review and approve software provisioning within 24 hours.";
         category = 'software';
         suggestedAction = { type: 'create_ticket', category: 'software', title: 'Software License Request' };
       } else if (/sla|response time|priority|urgent|hours/i.test(lower)) {

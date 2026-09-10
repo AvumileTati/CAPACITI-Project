@@ -54,7 +54,7 @@ export const HelpdeskAssistant: React.FC<HelpdeskAssistantProps> = ({
     {
       id: 'welcome',
       role: 'assistant',
-      text: `Hello ${userName}! 👋 I'm your **TechnoResolve Helpdesk Assistant**.\n\nI can help you troubleshoot common IT problems (passwords, Wi-Fi, VPN, software), provide verified policy steps, or prepare a support ticket for our technician team.\n\nWhat can I help you with today?`,
+      text: `Hello ${userName}! I'm your **TechnoResolve Helpdesk Assistant**.\n\nI can help you troubleshoot common IT problems (passwords, Wi-Fi, VPN, software), provide verified policy steps, or prepare a support ticket for our technician team.\n\nWhat can I help you with today?`,
       timestamp: new Date(),
       canCreateTicket: false,
     },

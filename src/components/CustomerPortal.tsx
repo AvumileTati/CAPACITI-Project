@@ -111,8 +111,11 @@ export const CustomerPortal: React.FC = () => {
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           {/* Logo & Brand */}
           <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-lg bg-blue-500 text-white shadow-sm ring-1 ring-white/20">
-              <Bot className="size-5" />
+            <div
+              style={{ color: '#000000', borderColor: '#000000', backgroundColor: '#ffffff', width: '40px' }}
+              className="grid size-10 place-items-center rounded-lg bg-white text-black border border-black shadow-sm"
+            >
+              <Bot style={{ width: '40px', height: '40px' }} className="size-10 text-black p-1" />
             </div>
             <span className="font-bold text-white text-base tracking-tight">
               TechnoResolve Desk
@@ -220,7 +223,7 @@ export const CustomerPortal: React.FC = () => {
               {/* Header / Search */}
               <div className="space-y-5">
                 <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  Good {new Date().getHours() < 12 ? 'morning' : 'afternoon'}, {userName} 👋
+                  Good {new Date().getHours() < 12 ? 'morning' : 'afternoon'}, {userName}
                 </h1>
                 
                 {/* Search Bar - Aesthetic */}
@@ -241,76 +244,92 @@ export const CustomerPortal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quick Actions (Bento Grid) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <motion.button
-                  whileHover={{ y: -3, scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setPreselectedCategory('hardware');
-                    setIsNewTicketOpen(true);
-                  }}
-                  className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-blue-400 hover:shadow-md transition-all group text-left cursor-pointer"
-                >
-                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                    <Laptop className="size-5" />
+              {/* Quick Actions (Category Shortcuts) */}
+              <div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Category Shortcuts
+                    </h2>
+                    <span className="text-[11px] font-semibold text-teal-800 bg-teal-100/80 border border-teal-200 px-2 py-0.5 rounded-full">
+                      Shortcuts
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Hardware</h3>
-                    <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Devices & Peripherals</p>
-                  </div>
-                </motion.button>
-                <motion.button
-                  whileHover={{ y: -3, scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setPreselectedCategory('software');
-                    setIsNewTicketOpen(true);
-                  }}
-                  className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-purple-400 hover:shadow-md transition-all group text-left cursor-pointer"
-                >
-                  <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                    <Wifi className="size-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Software</h3>
-                    <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Apps & Access</p>
-                  </div>
-                </motion.button>
-                <motion.button
-                  whileHover={{ y: -3, scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setPreselectedCategory('access');
-                    setIsNewTicketOpen(true);
-                  }}
-                  className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-amber-400 hover:shadow-md transition-all group text-left cursor-pointer"
-                >
-                  <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                    <KeyRound className="size-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Access</h3>
-                    <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Passwords & VPN</p>
-                  </div>
-                </motion.button>
-                <motion.button
-                  whileHover={{ y: -3, scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setPreselectedCategory('billing');
-                    setIsNewTicketOpen(true);
-                  }}
-                  className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-emerald-400 hover:shadow-md transition-all group text-left cursor-pointer"
-                >
-                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                    <CreditCard className="size-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Billing</h3>
-                    <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Invoices & Cards</p>
-                  </div>
-                </motion.button>
+                  <span className="text-xs text-slate-500 hidden sm:inline">
+                    Select a shortcut to open a pre-categorized ticket
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <motion.button
+                    whileHover={{ y: -3, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setPreselectedCategory('hardware');
+                      setIsNewTicketOpen(true);
+                    }}
+                    className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-blue-400 hover:shadow-md transition-all group text-left cursor-pointer"
+                  >
+                    <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      <Laptop className="size-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">Hardware</h3>
+                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Devices & Peripherals</p>
+                    </div>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ y: -3, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setPreselectedCategory('software');
+                      setIsNewTicketOpen(true);
+                    }}
+                    className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-purple-400 hover:shadow-md transition-all group text-left cursor-pointer"
+                  >
+                    <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                      <Wifi className="size-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">Software</h3>
+                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Apps & Access</p>
+                    </div>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ y: -3, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setPreselectedCategory('access');
+                      setIsNewTicketOpen(true);
+                    }}
+                    className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-amber-400 hover:shadow-md transition-all group text-left cursor-pointer"
+                  >
+                    <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                      <KeyRound className="size-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">Access</h3>
+                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Passwords & VPN</p>
+                    </div>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ y: -3, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setPreselectedCategory('billing');
+                      setIsNewTicketOpen(true);
+                    }}
+                    className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col items-start gap-3 hover:border-emerald-400 hover:shadow-md transition-all group text-left cursor-pointer"
+                  >
+                    <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                      <CreditCard className="size-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">Billing</h3>
+                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">Invoices & Cards</p>
+                    </div>
+                  </motion.button>
+                </div>
               </div>
 
               {/* General Request & AI Banner */}
@@ -323,7 +342,7 @@ export const CustomerPortal: React.FC = () => {
                   className="sm:col-span-2 bg-[#1a4043] hover:bg-[#143235] text-white rounded-2xl p-5 flex flex-col justify-center items-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                 >
                   <Plus className="size-6 stroke-[2.5] text-white group-hover:scale-110 transition-transform" />
-                  <span className="font-bold text-sm text-white">Other Request</span>
+                  <span className="font-bold text-sm text-white">Add New Ticket</span>
                 </button>
                 
                 <div className="sm:col-span-3 bg-[#1a4043] hover:bg-[#143235] transition-colors rounded-2xl p-5 text-white flex items-center justify-between relative overflow-hidden shadow-sm">
@@ -409,7 +428,7 @@ export const CustomerPortal: React.FC = () => {
             >
               <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                 <div>
-                  <h1 className="text-2xl font-extrabold text-slate-900">My Requests</h1>
+                  <h1 className="text-2xl font-extrabold text-slate-900">My Tickets</h1>
                   <p className="text-xs text-slate-500">View progress and chat directly with technicians</p>
                 </div>
                 <button
@@ -417,7 +436,7 @@ export const CustomerPortal: React.FC = () => {
                   className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 shadow-xs cursor-pointer"
                 >
                   <Plus className="size-4" />
-                  <span>New Request</span>
+                  <span>New Ticket</span>
                 </button>
               </div>
 
