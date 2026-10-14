@@ -14,7 +14,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.email != null && (
         request.auth.token.email.lower() == 'tatiavumile@gmail.com' ||
         request.auth.token.email.lower() == 'avutati@gmail.com' ||
-        request.auth.token.email.lower() == 'philibaneawonke@gmail.com'
+        request.auth.token.email.lower() == 'philibaneawonke@gmail.com' ||
+        request.auth.token.email.lower() == 'maladze.mugeri@capaciti.org.za' ||
+        request.auth.token.email.lower() == 'emihle.tom@capaciti.org.za' ||
+        request.auth.token.email.lower() == 'malhilhibonani02@gmail.com'
       );
     }
 
