@@ -151,6 +151,7 @@ const playChimeSound = () => {
 export const DESIGNATED_ADMIN_EMAILS = [
   'tatiavumile@gmail.com',
   'avutati@gmail.com',
+  'philibaneawonke@gmail.com',
 ];
 export const isDesignatedAdminEmail = (email?: string | null): boolean => {
   if (!email) return false;
